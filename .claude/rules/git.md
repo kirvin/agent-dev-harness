@@ -11,15 +11,18 @@ Before writing a commit message, run `bd list --status=in_progress` to find the
 active task ID. Include it in the commit message footer:
 
 ```
-feat: add login mutation
+feat: add encrypted backup infrastructure
 
-Implements register and login resolvers with bcrypt + JWT.
+Adds Ansible role with systemd timers and age-encrypted backup scripts.
 
-Beads: the-nerdery-a8e
+Beads: <project>-<id>
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
 If no task is in progress, omit the `Beads:` line.
+
+**This is mandatory.** The `Beads:` footer is the only link between git history
+and the issue tracker. Do not omit it when a task is active.
 
 ## CI fixes
 
