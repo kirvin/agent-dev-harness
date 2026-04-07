@@ -1,34 +1,40 @@
-# CLAUDE.md
+# Agent Instructions
 
-This file provides guidance to Claude Code when working with code in this repository.
+This project uses **bd** (beads) for issue tracking. Run `bd prime` for full workflow context.
 
-## Project Documentation
-
-See the following docs for project-specific details:
-
-- `docs/codebase-overview.md` — Architecture, services, data model
-- `docs/development.md` — Development commands and common workflows
-- `docs/decisions.md` — Architectural decision log
-
-## Issue Tracking (Beads)
-
-This project uses **Beads** (`bd`) for AI-native issue tracking.
+## Quick Reference
 
 ```bash
-bd ready          # show next issue to work on
-bd show <id>      # show issue details
-bd update <id>    # update issue status/notes
-bd close <id>     # close completed issue
+bd ready              # Find available work
+bd show <id>          # View issue details
+bd update <id> --claim  # Claim work atomically
+bd close <id>         # Complete work
+bd dolt push          # Push beads data to remote
 ```
 
-Mandatory steps per issue: pick issue → implement → run quality gates → `bd close` → `git push`.
+## Non-Interactive Shell Commands
 
-**When the user gives a direct implementation instruction**, always create a beads issue with `bd create` before writing any code. Mark it `in_progress` immediately, then proceed.
+**ALWAYS use non-interactive flags** with file operations to avoid hanging on confirmation prompts.
 
-# Compact instructions
+Shell commands like `cp`, `mv`, and `rm` may be aliased to include `-i` (interactive) mode on some systems, causing the agent to hang indefinitely waiting for y/n input.
 
-When using compact, focus on test output and code changes.
+**Use these forms instead:**
+```bash
+# Force overwrite without prompting
+cp -f source dest           # NOT: cp source dest
+mv -f source dest           # NOT: mv source dest
+rm -f file                  # NOT: rm file
 
+# For recursive operations
+rm -rf directory            # NOT: rm -r directory
+cp -rf source dest          # NOT: cp -r source dest
+```
+
+**Other commands that may prompt:**
+- `scp` - use `-o BatchMode=yes` for non-interactive
+- `ssh` - use `-o BatchMode=yes` to fail instead of prompting
+- `apt-get` - use `-y` flag
+- `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker
