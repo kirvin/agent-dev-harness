@@ -1,0 +1,9 @@
+{
+  "name": "kf",
+  "description": "Personal workflow plugins — spec-first requirements and architecture methodology",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kelly Irvin"
+  },
+  "license": "MIT"
+}

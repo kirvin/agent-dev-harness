@@ -86,7 +86,6 @@ echo
 
 echo "==> Copying Claude Code config from $CONFIG_REPO"
 cp -r "$CONFIG_REPO/.claude" .
-cp -r "$CONFIG_REPO/skills" .
 cp "$CONFIG_REPO/skills-lock.json" .
 cp "$CONFIG_REPO/CLAUDE.md" .
 echo
@@ -109,11 +108,28 @@ echo
 # No automated edits — user is expected to customize per the README instructions.
 
 # ---------------------------------------------------------------------------
-# 6. Install skills
+# 6. Install skills (skills-lock.json pinned skills only)
 # ---------------------------------------------------------------------------
 
-echo "==> Installing skills (npx skills experimental_install)"
+echo "==> Installing pinned skills (npx skills experimental_install)"
 npx skills experimental_install --yes --agent claude-code
+echo
+
+# ---------------------------------------------------------------------------
+# 6a. Register kf plugin marketplace (if not already registered)
+# ---------------------------------------------------------------------------
+
+KF_MARKETPLACE_URL="https://github.com/kirvin/claude-config"
+MARKETPLACES_DIR="$HOME/.claude/plugins/marketplaces"
+
+if [[ -d "$MARKETPLACES_DIR/claude-config" ]]; then
+  echo "==> kf plugin marketplace already registered — skipping"
+else
+  echo "==> NOTE: Register the kf plugin marketplace in Claude Code:"
+  echo "    /plugin marketplace add $KF_MARKETPLACE_URL"
+  echo "    /plugin install kf"
+  echo "    (Run these slash commands once in any Claude Code session)"
+fi
 echo
 
 # ---------------------------------------------------------------------------
@@ -154,7 +170,7 @@ echo
 # ---------------------------------------------------------------------------
 
 echo "==> Committing initial config"
-git add .claude/ skills/ skills-lock.json CLAUDE.md README.md .beads/ 2>/dev/null || true
+git add .claude/ skills-lock.json CLAUDE.md README.md .beads/ 2>/dev/null || true
 git add . 2>/dev/null || true
 git commit -m "chore: add Claude Code configuration"
 git push -u origin main
