@@ -57,7 +57,7 @@ cp /path/to/claude-config/CLAUDE.md .   # then customize
 npx skills experimental_install --yes --agent claude-code
 
 # 3. Initialize Beads
-bd init
+bd init --shared-server
 bd hooks install
 
 # 4. Commit
