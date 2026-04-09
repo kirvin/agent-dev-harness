@@ -1,11 +1,14 @@
 # Design Skills
 
-When working on frontend UI, components, pages, or visual design, evaluate and activate relevant design skills before implementing.
+When working on UI, reviewing design/UX, or establishing design guidelines,
+evaluate and activate relevant design skills BEFORE implementing or advising.
 
 ## Skill Selection
 
 | Task | Skills to activate |
 |------|--------------------|
+| Reviewing what design/UX guidelines to establish | `stitch-design-taste`, `ui-ux-pro-max` |
+| UX review: critiquing flows, patterns, or information architecture | `ui-ux-pro-max` |
 | Building or redesigning a page, screen, or component | `frontend-design`, `design-taste-frontend` |
 | UX decisions: layout, color, typography, spacing | `ui-ux-pro-max` |
 | Targeting premium / polished visual output | `high-end-visual-design` |
@@ -18,6 +21,11 @@ When working on frontend UI, components, pages, or visual design, evaluate and a
 
 ## Activation Rule
 
-When any row above matches, call `Skill(<skill-name>)` before writing any code — the same as the global mandatory sequence. Multiple skills may apply; activate all that match.
+When any row above matches, call `Skill(<skill-name>)` for EACH relevant skill
+before writing code or design advice — the same as the global mandatory sequence.
+Multiple skills may apply; activate all that match.
 
-`frontend-design` + `design-taste-frontend` are the baseline pair for any non-trivial UI work in this app. Default to both unless the task is clearly a minor tweak.
+If a skill fails to load, stop and report it rather than proceeding silently.
+
+`frontend-design` + `design-taste-frontend` are the baseline pair for any
+non-trivial UI work in this app. Default to both unless the task is clearly a minor tweak.
