@@ -8,16 +8,23 @@ help:
 	@echo "  make install-to-project        Install toolkit into another project"
 	@echo "                                 Usage: make install-to-project target=/path/to/project [options]"
 	@echo "                                 Options: --force, --dry-run"
-	@echo "  make plugin-release            Sync skills, bump version, commit, and push"
+	@echo "  make plugin-release            Sync skills, bump patch version, commit, and push"
+	@echo "                                 Optional: version=1.4.0 for minor/major bumps"
 	@echo "                                 Optional: task=adp-xxx to link a beads issue"
 	@echo "  make bd-close                  Close beads issue and linked GitHub issue"
 	@echo "                                 Usage: make bd-close id=adp-xxx [reason=\"...\"]"
 	@echo ""
 
-# Sync .agents/skills/ → plugins/kf/skills/, bump patch version, commit, and push.
-# If a beads task is active, include its ID: make plugin-release task=adp-xxx
+# Sync .agents/skills/ → plugins/kf/skills/, bump version, commit, and push.
+# Patch bump by default. For minor/major: make plugin-release version=1.4.0
+# Optionally link a beads task:         make plugin-release task=adp-xxx
 plugin-release:
-	node scripts/generate-plugin-skills.js --bump
+	@if [ -n "$(version)" ]; then \
+		node -e "const f='plugins/kf/.claude-plugin/plugin.json'; const p=JSON.parse(require('fs').readFileSync(f,'utf8')); p.version='$(version)'; require('fs').writeFileSync(f,JSON.stringify(p,null,2)+'\n'); console.log('Version set to $(version)')"; \
+		node scripts/generate-plugin-skills.js; \
+	else \
+		node scripts/generate-plugin-skills.js --bump; \
+	fi
 	git add plugins/kf/
 	@if [ -n "$(task)" ]; then \
 		git diff --cached --quiet || git commit -m "chore: sync plugin skills and bump version\n\nBeads: $(task)\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"; \
