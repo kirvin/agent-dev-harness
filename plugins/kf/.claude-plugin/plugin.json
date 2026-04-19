@@ -1,7 +1,7 @@
 {
   "name": "kf",
   "description": "Personal workflow plugins — spec-first methodology, UI/UX design skills, and session lifecycle skills (task-completion, retro, session-close)",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": {
     "name": "Kelly Irvin"
   },
