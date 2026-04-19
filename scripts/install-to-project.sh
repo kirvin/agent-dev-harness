@@ -72,13 +72,13 @@ ADP_MARKETPLACE_URL=$(git -C "$SOURCE_DIR" remote get-url origin \
 if command -v node &>/dev/null; then
   ADP_PLUGIN_NAME=$(node -e \
     "console.log(require('$SOURCE_DIR/.claude-plugin/marketplace.json').plugins[0].name)" \
-    2>/dev/null) || ADP_PLUGIN_NAME="sgd"
+    2>/dev/null) || ADP_PLUGIN_NAME="kf"
 elif command -v python3 &>/dev/null; then
   ADP_PLUGIN_NAME=$(python3 -c \
     "import json; print(json.load(open('$SOURCE_DIR/.claude-plugin/marketplace.json'))['plugins'][0]['name'])" \
-    2>/dev/null) || ADP_PLUGIN_NAME="sgd"
+    2>/dev/null) || ADP_PLUGIN_NAME="kf"
 else
-  ADP_PLUGIN_NAME="sgd"
+  ADP_PLUGIN_NAME="kf"
 fi
 
 echo "Source   : $SOURCE_DIR"

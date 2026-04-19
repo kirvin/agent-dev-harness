@@ -6,7 +6,7 @@ Personal Claude Code toolkit for [@kirvin](https://github.com/kirvin). Distribut
 
 This repo serves two purposes:
 
-1. **Plugin marketplace** — hosts the `kf` plugin (custom skills) and the `sgd` plugin (design skills). Projects point Claude Code here to install and update those plugins.
+1. **Plugin marketplace** — hosts the `kf` plugin, which bundles all custom skills (workflow methodology, design, repo knowledge, session lifecycle). Projects point Claude Code here to install and update the plugin.
 2. **Project installer** — `scripts/install-to-project.sh` copies the rules, workflow conventions, and AWS Bedrock config into any existing project repo. `scripts/new-project.sh` creates a new repo from scratch with everything already configured.
 
 If you're working on a project that has the `kf` plugin installed, this is where those skills live. If something in the Claude Code workflow feels wrong in one of kirvin's projects, the source is probably here.
@@ -15,8 +15,7 @@ If you're working on a project that has the `kf` plugin installed, this is where
 
 ```
 plugins/
-  kf/             — Custom skills (spec-first, repo knowledge, session lifecycle)
-  sgd/            — Design skills (generated from .agents/skills/)
+  kf/             — All custom skills (spec-first, design, repo knowledge, session lifecycle)
 
 .claude/
   rules/
@@ -36,7 +35,7 @@ scripts/
   new-project.sh          — Create a new repo pre-configured with this toolkit
   install-to-project.sh   — Install this toolkit into an existing repo
   setup.sh                — Per-machine setup (Homebrew, AWS, plugins, beads); copied into target projects by install-to-project.sh
-  generate-plugin-skills.js — Sync .agents/skills/ into plugins/sgd/skills/
+  generate-plugin-skills.js — Sync .agents/skills/ into plugins/kf/skills/
 
 CLAUDE.md                 — Template project entry point
 skills-lock.json          — Pinned community skills (restored via npx skills)
@@ -107,7 +106,7 @@ git add skills-lock.json && git commit -m "chore: update skills"
 
 See `docs/deployment-and-release.md` for the full release process. Short version:
 
-1. Edit skills under `plugins/kf/` or `plugins/sgd/`
+1. Edit skills under `plugins/kf/`
 2. Bump the version in the plugin's `.claude-plugin/plugin.json`
 3. Push — consuming projects update with `claude plugin update kf@claude-config`
 
