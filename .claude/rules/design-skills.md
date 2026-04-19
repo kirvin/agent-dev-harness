@@ -1,10 +1,10 @@
 # Design Skills
 
-> **Prerequisite:** These skills are provided by the `sgd` plugin from the `claude-config`
+> **Prerequisite:** These skills are provided by the `kf` plugin from the `claude-config`
 > marketplace. They must be installed before this rule has any effect:
 > ```
 > claude plugin marketplace add github:kirvin/claude-config
-> claude plugin install sgd@claude-config --scope project
+> claude plugin install kf@claude-config --scope project
 > ```
 > Alternatively, run `./scripts/setup.sh` from the claude-config repo.
 
