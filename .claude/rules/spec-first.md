@@ -16,6 +16,20 @@ All non-trivial features and new projects follow a spec-first approach. Use `Ski
 
 Bug fixes that restore documented behavior, CI tweaks, test isolation improvements, dependency upgrades with no behavior change.
 
+## Open Question Rule (applies to all requirements work)
+
+Every open question in a requirements doc must be categorized before the session ends — whether you wrote the doc or are updating it.
+
+| Mark | Meaning | Action required |
+|------|---------|-----------------|
+| ✅ | Decided inline | Update the doc — no issue needed |
+| ⏳ | Deferred to a named phase | Note the gate in the doc — no issue yet |
+| *(none)* | Decision-blocking | `bd create` immediately |
+
+An open question with no category is a dead end. It will never appear in `bd ready`.
+
+**Also:** any requirements doc with a phased delivery plan (Phase A / B / C) needs a Phase A planning issue in beads before the session ends. A plan with no issues is equally invisible.
+
 ## Layer Quick Reference
 
 | Layer | Document | Written as |

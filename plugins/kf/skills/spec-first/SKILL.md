@@ -46,6 +46,54 @@ Never write architecture before privacy constraints are known. Never write plans
 
 ---
 
+## Open Question Lifecycle
+
+Writing an open question in a requirements doc is only useful if it gets answered. A question that stays in a table cell is invisible to `bd ready` — it will never surface again.
+
+**Every open question must be assigned to one of three categories before the session ends:**
+
+| Category | When to use | What to do |
+|----------|-------------|------------|
+| ✅ **Decided** | You can answer it now with available information | Answer inline, mark ✅, update the doc |
+| ⏳ **Phase-deferred** | Not blocking current work; needs an answer before a specific future phase | Mark ⏳ with the gate phase and note "create issue at [Phase X] kickoff" |
+| **Decision-blocking** | Left unanswered, this blocks implementation or causes rework | `bd create` immediately — before the session ends |
+
+**This rule applies when writing a new requirements doc AND when updating an existing one.** Any open question you encounter in a doc you're touching — even if you didn't write it — must be categorized before the session closes.
+
+### How to tell which category
+
+Ask: "If we start Phase A tomorrow, does this question need an answer first?"
+- Yes → decision-blocking. Create an issue now.
+- No, but it blocks a later phase → phase-deferred. Note the gate.
+- You already know the answer → decide it inline.
+
+### Questions that seem urgent but usually aren't blocking
+
+- Performance targets for a future-phase feature (Phase A doesn't need them)
+- Mobile/responsive support (desktop-first is the safe default; defer)
+- Exact error message copy (implement the path, polish copy later)
+- Internal naming conventions (answer inline or defer; rarely blocks anything)
+
+### Questions that look like details but are actually blocking
+
+- Auth model for a new app → blocks the skeleton (can't build an auth gate without it)
+- App naming → blocks monorepo structure and all existing file references
+- Shared component strategy → blocks whether a shared package gets built at all
+
+### Session-close checklist for spec work
+
+Before marking any requirements or planning work complete:
+
+```
+[ ] Every open question in docs you touched is categorized (✅ / ⏳ / blocking issue)
+[ ] Decision-blocking questions have a bd create issue filed
+[ ] Any spec with a phased delivery plan has a Phase A planning issue in beads
+```
+
+The third item is the most commonly missed: requirements docs that define Phase A/B/C but have no engineering issues are also dead ends. The planning issues bridge the spec to buildable work.
+
+---
+
 ## Classifying Open Questions
 
 Before answering any open question, assign it to a layer:
