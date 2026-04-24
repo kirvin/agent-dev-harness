@@ -26,6 +26,7 @@ evaluate and activate relevant design skills BEFORE implementing or advising.
 | Generating a design system or DESIGN.md | `stitch-design-taste` |
 | Animations, transitions, springs, gestures, drag, scroll effects | `ui-animation` |
 | Generating large components where output may truncate | `full-output-enforcement` |
+| Starting from a Figma URL | `figma-to-spec`, `frontend-design`, `design-taste-frontend` |
 
 ## Activation Rule
 
@@ -35,3 +36,6 @@ Multiple skills may apply; activate all that match.
 
 `frontend-design` + `design-taste-frontend` are the baseline pair for any
 non-trivial UI work. Default to both unless the task is clearly a minor tweak.
+
+When a Figma URL is present, always load `kf:figma-to-spec` first to convert
+the design into a structured spec before activating any build skills.
