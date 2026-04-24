@@ -85,6 +85,19 @@ Key components:
 - `scripts/setup.sh` — Per-machine setup (Homebrew, AWS, plugins, beads). This file is a template; `install-to-project.sh` injects `ADP_MARKETPLACE_URL` and `ADP_PLUGIN_NAME` before copying it into a target project. Do not run it from this repo directly.
 - `scripts/generate-plugin-skills.js` — Syncs `.agents/skills/` into `plugins/kf/skills/` (for the generated design skill wrappers).
 
+## Secure Coding
+
+All code in this repo and in projects provisioned by it must follow these rules:
+
+- **No hardcoded credentials** — secrets belong in `.env` (gitignored) or AWS Secrets Manager; never in source files
+- **No secrets in log output** — error messages and debug output must not contain tokens, passwords, or keys
+- **Validate at boundaries** — validate user input and external API responses before using them; trust internal code
+- **Safe error messages** — do not expose stack traces, internal paths, or system details to untrusted callers
+- **External service credentials** — always sourced from `.env`; provide `.env.example` with placeholder values
+- **New integrations require a threat model** — at minimum one STRIDE pass before merging; document findings in the PR
+
+When adding credentials to setup scripts, guard every step so re-runs are safe and never overwrite existing values without prompting.
+
 ## Conventions & Patterns
 
 - Scripts use `#!/usr/bin/env bash` and `set -euo pipefail`

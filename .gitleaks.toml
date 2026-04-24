@@ -1,0 +1,18 @@
+[allowlist]
+description = "Known false positives"
+
+# Paths that are expected to contain placeholder or example credential patterns
+paths = [
+  ".env.example",
+  "docs/integrations",
+  "temp/",
+]
+
+# Regex patterns that match placeholder strings, not real secrets
+regexes = [
+  "__INJECTED__",
+  "YOUR_AWS_SSO_PROFILE",
+  "<YOUR_",
+  "example\\.com",
+  "placeholder",
+]
