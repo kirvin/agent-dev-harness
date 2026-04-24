@@ -439,6 +439,37 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 11. .claude/settings.local.json — Figma (optional, propagated if set)
+# ---------------------------------------------------------------------------
+
+step "Propagating Figma token (if set)"
+
+FIGMA_TOKEN_VALUE=""
+if [[ -f "$SOURCE_DIR/.env.local" ]]; then
+  FIGMA_TOKEN_VALUE=$(grep '^FIGMA_API_TOKEN=' "$SOURCE_DIR/.env.local" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || echo "")
+elif [[ -f "$SOURCE_DIR/.env" ]]; then
+  FIGMA_TOKEN_VALUE=$(grep '^FIGMA_API_TOKEN=' "$SOURCE_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || echo "")
+fi
+
+if [[ -z "$FIGMA_TOKEN_VALUE" ]]; then
+  ok "FIGMA_API_TOKEN not set in source — skipping (run setup.sh in target project to configure)"
+elif [[ "$DRY_RUN" == true ]]; then
+  ok "[dry-run] would add FIGMA_API_TOKEN to settings.local.json"
+elif ! command -v jq &>/dev/null; then
+  warn "jq not found — skipping Figma token propagation"
+else
+  mkdir -p "$TARGET_DIR/.claude"
+  if [[ ! -f "$SETTINGS_LOCAL_DST" ]]; then
+    jq -n --arg token "$FIGMA_TOKEN_VALUE" '{env: {FIGMA_API_TOKEN: $token}}' > "$SETTINGS_LOCAL_DST"
+    ok "Created settings.local.json with FIGMA_API_TOKEN"
+  else
+    MERGED=$(jq --arg token "$FIGMA_TOKEN_VALUE" '.env.FIGMA_API_TOKEN = $token' "$SETTINGS_LOCAL_DST")
+    echo "$MERGED" > "$SETTINGS_LOCAL_DST"
+    ok "Added FIGMA_API_TOKEN to settings.local.json"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
 # Done — hand off to the developer
 # ---------------------------------------------------------------------------
 

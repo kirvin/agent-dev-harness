@@ -205,6 +205,33 @@ else
 fi
 
 # ──────────────────────────────────────────────
+# 10. Figma integration (optional)
+# ──────────────────────────────────────────────
+step "Figma integration (optional)..."
+
+ENV_ACTIVE_FILE="${ENV_LOCAL_FILE:-$ENV_FILE}"
+
+if grep -q 'FIGMA_API_TOKEN' "$ENV_ACTIVE_FILE" 2>/dev/null; then
+  ok "FIGMA_API_TOKEN already set in $(basename "$ENV_ACTIVE_FILE") — skipping"
+else
+  echo "    The figma-to-spec skill converts Figma design URLs into structured specs."
+  echo "    A personal access token is required (Figma → Settings → Account → Personal access tokens)."
+  echo ""
+  read -r -p "    Set up Figma integration? [y/N] " FIGMA_ANSWER
+  if [[ "${FIGMA_ANSWER,,}" == "y" ]]; then
+    read -r -p "    Paste your Figma personal access token: " FIGMA_TOKEN
+    if [[ -n "$FIGMA_TOKEN" ]]; then
+      echo "FIGMA_API_TOKEN=$FIGMA_TOKEN" >> "$ENV_ACTIVE_FILE"
+      ok "FIGMA_API_TOKEN written to $(basename "$ENV_ACTIVE_FILE")"
+    else
+      warn "Empty token — skipping. Set FIGMA_API_TOKEN manually when ready."
+    fi
+  else
+    ok "Skipped — set FIGMA_API_TOKEN in .env.local later if needed"
+  fi
+fi
+
+# ──────────────────────────────────────────────
 # Done
 # ──────────────────────────────────────────────
 echo ""
