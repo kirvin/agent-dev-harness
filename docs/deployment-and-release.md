@@ -4,10 +4,10 @@ This document covers how to release a new version of the `kf` plugin and propaga
 
 ## How the Plugin System Works
 
-The `kf` plugin is installed into projects via the `claude-config` marketplace:
+The `kf` plugin is installed into projects via the `agent-dev-harness` marketplace:
 
 ```
-kirvin/claude-config  (GitHub)
+kirvin/agent-dev-harness  (GitHub)
   └── .claude-plugin/marketplace.json   ← registers this repo as a marketplace
   └── plugins/kf/
         ├── .claude-plugin/plugin.json  ← version lives here
@@ -51,7 +51,7 @@ git push
 In each project that has the `kf` plugin installed:
 
 ```bash
-claude plugin update kf@claude-config --scope project
+claude plugin update kf@agent-dev-harness --scope project
 ```
 
 Then **restart the Claude Code session** to apply the changes. New and updated skills won't appear until the session is restarted.
@@ -63,8 +63,8 @@ Then **restart the Claude Code session** to apply the changes. New and updated s
 When iterating quickly on skill content, force-reinstalling bypasses the version check:
 
 ```bash
-claude plugin uninstall kf@claude-config --scope project
-claude plugin install kf@claude-config
+claude plugin uninstall kf@agent-dev-harness --scope project
+claude plugin install kf@agent-dev-harness
 ```
 
 This always pulls the latest commit from GitHub regardless of version. Use this during development; bump the version for deliberate releases.

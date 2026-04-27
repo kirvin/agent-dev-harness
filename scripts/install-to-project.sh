@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# install-to-project.sh — Copy the claude-config toolkit into an existing project.
+# install-to-project.sh — Copy the agent-dev-harness toolkit into an existing project.
 #
-# Usage (from the claude-config directory):
+# Usage (from the agent-dev-harness directory):
 #   ./scripts/install-to-project.sh TARGET_DIR [--force] [--dry-run]
 #
 # TARGET_DIR  Path to the project repo to install into (must be a git repo).
@@ -52,7 +52,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(dirname "$SCRIPT_DIR")"
 
 [[ -d "$TARGET_DIR/.git" ]]          || fail "Not a git repository: $TARGET_DIR"
-[[ "$TARGET_DIR" != "$SOURCE_DIR" ]] || fail "TARGET_DIR cannot be the claude-config repo itself."
+[[ "$TARGET_DIR" != "$SOURCE_DIR" ]] || fail "TARGET_DIR cannot be the agent-dev-harness repo itself."
 
 TARGET_BRANCH=$(git -C "$TARGET_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 if [[ "$TARGET_BRANCH" == "main" || "$TARGET_BRANCH" == "master" ]]; then
@@ -304,7 +304,7 @@ else
       # Add section header before first pattern in a group
       if [[ $ADDED_PATTERNS -eq 0 ]]; then
         echo "" >> "$GITIGNORE_DST"
-        echo "# Added by claude-config toolkit" >> "$GITIGNORE_DST"
+        echo "# Added by agent-dev-harness toolkit" >> "$GITIGNORE_DST"
       fi
 
       # Find the comment header for this pattern
@@ -386,7 +386,7 @@ step "Configuring AWS Bedrock in settings.local.json"
 
 SETTINGS_LOCAL_DST="$TARGET_DIR/.claude/settings.local.json"
 
-# Read AWS_PROFILE_NAME from source .env.local or .env (claude-config repo)
+# Read AWS_PROFILE_NAME from source .env.local or .env (agent-dev-harness repo)
 # Try .env.local first (gitignored), then .env (may be source-controlled)
 # The target project won't have .env yet - that's created after install
 AWS_PROFILE_VALUE=""

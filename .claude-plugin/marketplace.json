@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "claude-config",
+  "name": "agent-dev-harness",
   "description": "Personal Claude Code configuration template and workflow plugins",
   "owner": {
     "name": "Kelly Irvin"

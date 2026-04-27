@@ -1,6 +1,6 @@
 # STRIDE Threat Model Template
 
-Pre-adapted for the ki-dev-toolkit stack. Fill in the blank rows for the feature under analysis.
+Pre-adapted for the agent-dev-harness stack. Fill in the blank rows for the feature under analysis.
 Delete rows that don't apply. Add rows for additional components.
 
 ## Feature / Component Being Modeled

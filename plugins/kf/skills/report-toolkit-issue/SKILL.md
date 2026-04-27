@@ -1,6 +1,6 @@
 ---
 name: report-toolkit-issue
-description: File a GitHub issue in the ki-dev-toolkit repo directly from conversation. Use when a developer reports a bug in a skill or rule, requests a new feature in the toolkit, or wants to flag a workflow problem. Collects structured details and creates the issue via gh CLI.
+description: File a GitHub issue in the agent-dev-harness repo directly from conversation. Use when a developer reports a bug in a skill or rule, requests a new feature in the toolkit, or wants to flag a workflow problem. Collects structured details and creates the issue via gh CLI.
 ---
 
 # Report Toolkit Issue
@@ -66,7 +66,7 @@ Show this to the user and ask: "Does this look right? I'll create the issue once
 
 ```bash
 gh issue create \
-  --repo kirvin/claude-config \
+  --repo kirvin/agent-dev-harness \
   --title "<title>" \
   --body "<body>" \
   --label "<bug|enhancement>"
@@ -92,6 +92,6 @@ This links the beads issue to the GitHub issue so `bd-close.sh` can auto-close i
 
 ## Notes
 
-- The repo name `kirvin/claude-config` will update to `kirvin/ki-dev-toolkit` once the rename is complete. Update this skill after that happens.
+- The repo is `kirvin/agent-dev-harness` (previously `claude-config`, previously `agent-dev-plugins`).
 - If `gh` is not authenticated, guide the user to run `gh auth login` first.
 - If the user is in a project that doesn't have `gh` installed, suggest they open the issue manually and provide the formatted body.

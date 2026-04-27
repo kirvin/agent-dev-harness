@@ -1,12 +1,12 @@
 # Design Skills
 
-> **Prerequisite:** These skills are provided by the `kf` plugin from the `claude-config`
+> **Prerequisite:** These skills are provided by the `kf` plugin from the `agent-dev-harness`
 > marketplace. They must be installed before this rule has any effect:
 > ```
-> claude plugin marketplace add github:kirvin/claude-config
-> claude plugin install kf@claude-config --scope project
+> claude plugin marketplace add github:kirvin/agent-dev-harness
+> claude plugin install kf@agent-dev-harness --scope project
 > ```
-> Alternatively, run `./scripts/setup.sh` from the claude-config repo.
+> Alternatively, run `./scripts/setup.sh` from the agent-dev-harness repo.
 
 When working on UI, reviewing design/UX, or establishing design guidelines,
 evaluate and activate relevant design skills BEFORE implementing or advising.

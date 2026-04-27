@@ -43,8 +43,8 @@ done
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_REPO="$(dirname "$SCRIPT_DIR")"   # parent of scripts/ = claude-config root
-WORKSPACES_DIR="$(dirname "$CONFIG_REPO")"  # sibling of claude-config
+CONFIG_REPO="$(dirname "$SCRIPT_DIR")"   # parent of scripts/ = agent-dev-harness root
+WORKSPACES_DIR="$(dirname "$CONFIG_REPO")"  # sibling of agent-dev-harness
 TARGET_DIR="$WORKSPACES_DIR/$SLUG"
 
 echo "Config source : $CONFIG_REPO"
@@ -119,10 +119,10 @@ echo
 # 6a. Register kf plugin marketplace (if not already registered)
 # ---------------------------------------------------------------------------
 
-KF_MARKETPLACE_URL="https://github.com/kirvin/claude-config"
+KF_MARKETPLACE_URL="https://github.com/kirvin/agent-dev-harness"
 MARKETPLACES_DIR="$HOME/.claude/plugins/marketplaces"
 
-if [[ -d "$MARKETPLACES_DIR/claude-config" ]]; then
+if [[ -d "$MARKETPLACES_DIR/agent-dev-harness" ]]; then
   echo "==> kf plugin marketplace already registered — skipping"
 else
   echo "==> NOTE: Register the kf plugin marketplace in Claude Code:"

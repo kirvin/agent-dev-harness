@@ -18,5 +18,5 @@ Load `Skill(kf:report-toolkit-issue)` when the user says things like:
 1. Identifies the affected component (skill, rule, or script)
 2. Collects reproduction steps from context or by asking
 3. Drafts a GitHub issue for your review before filing
-4. Creates the issue in `kirvin/claude-config` via `gh issue create`
+4. Creates the issue in `kirvin/agent-dev-harness` via `gh issue create`
 5. Optionally creates a linked beads issue for local tracking

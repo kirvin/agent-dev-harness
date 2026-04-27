@@ -1,4 +1,4 @@
-# claude-config
+# agent-dev-harness
 
 Personal Claude Code toolkit for [@kirvin](https://github.com/kirvin). Distributes a consistent set of rules, skills, plugins, and workflow conventions across all of kirvin's personal projects.
 
@@ -108,7 +108,7 @@ See `docs/deployment-and-release.md` for the full release process. Short version
 
 1. Edit skills under `plugins/kf/`
 2. Bump the version in the plugin's `.claude-plugin/plugin.json`
-3. Push — consuming projects update with `claude plugin update kf@claude-config`
+3. Push — consuming projects update with `claude plugin update kf@agent-dev-harness`
 
 ## Propagating config changes to existing projects
 

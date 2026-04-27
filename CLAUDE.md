@@ -61,16 +61,16 @@ node scripts/generate-plugin-skills.js --dry-run
 
 ## Purpose & Owner
 
-This is **@kirvin's personal Claude Code toolkit** (`github.com/kirvin/claude-config`). It distributes a consistent set of rules, skills, plugins, and workflow conventions across all of kirvin's personal projects.
+This is **@kirvin's personal Claude Code toolkit** (`github.com/kirvin/agent-dev-harness`). It distributes a consistent set of rules, skills, plugins, and workflow conventions across all of kirvin's personal projects.
 
 Two things happen here:
 
-1. **Plugin authoring** — All custom skills live in `plugins/kf/`. When a consuming project runs `claude plugin update kf@claude-config`, it pulls from this repo.
+1. **Plugin authoring** — All custom skills live in `plugins/kf/`. When a consuming project runs `claude plugin update kf@agent-dev-harness`, it pulls from this repo.
 2. **Project provisioning** — `scripts/install-to-project.sh` copies rules, scripts, and AWS Bedrock config into any existing project. `scripts/new-project.sh` creates a new repo from scratch.
 
 If you're working in a project that has the `kf` plugin installed and something is wrong with a skill, the source is in `plugins/kf/skills/` here. If a rule needs to change across all projects, update it here and re-run `install-to-project.sh --force` against each project.
 
-> Note: this repo was previously named `agent-dev-plugins`. If you see that name anywhere in comments or error messages, it's stale and should be updated to `claude-config`.
+> Note: this repo was previously named `agent-dev-plugins` and then `claude-config`. If you see either name anywhere in comments or error messages, it's stale and should be updated to `agent-dev-harness`.
 
 ## Architecture Overview
 

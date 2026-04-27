@@ -32,7 +32,7 @@ leak, git history exposure; each playbook is self-contained
 
 ## Stack context
 
-This skill is calibrated for the ki-dev-toolkit stack:
+This skill is calibrated for the agent-dev-harness stack:
 - AWS Bedrock as the Claude Code provider (SSO-based auth via AWS profiles)
 - GitHub Actions CI with SHA-pinned actions
 - Figma API integration (personal access tokens)

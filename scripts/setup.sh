@@ -4,8 +4,8 @@
 # Usage (from this project's root directory):
 #   ./scripts/setup.sh
 #
-# This script is installed into your project by claude-config/scripts/install-to-project.sh.
-# Do not run it from the claude-config directory itself.
+# This script is installed into your project by agent-dev-harness/scripts/install-to-project.sh.
+# Do not run it from the agent-dev-harness directory itself.
 # Safe to re-run: all steps are guarded by existence checks.
 
 set -euo pipefail
@@ -30,7 +30,7 @@ step() { echo -e "\n${YELLOW}=>${NC} $*"; }
 # Guard: catch accidental execution of the uninstalled template
 if [[ "$ADP_MARKETPLACE_URL" == "__INJECTED__" ]]; then
   fail "This script has not been installed into a project yet.
-  Run install-to-project.sh from the claude-config repo:
+  Run install-to-project.sh from the agent-dev-harness repo:
     ./scripts/install-to-project.sh /path/to/your-project"
 fi
 
