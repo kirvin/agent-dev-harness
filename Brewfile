@@ -1,7 +1,11 @@
+brew "jq"
+brew "awscli"
+brew "yq"
 brew "git"
 brew "gh"
 brew "node"
 brew "beads"
 brew "dolt"
 
-cask "claude"
+cask "claude-code"
+brew "beads"
