@@ -26,3 +26,15 @@ When adding a package that ships platform-specific native binaries (esbuild, lig
 This ensures the lockfile always includes the entries needed for CI, even if someone runs plain `npm install` locally.
 
 Packages to watch for: `esbuild`, `lightningcss`, `rollup`, `sharp`, `@swc/*`, `@rollup/*`, `canvas`.
+
+## npm workspaces — test-env deps must be hoisted
+
+Test-only environment packages (`jsdom`, `happy-dom`, etc.) must be in **root**
+`devDependencies`, not just the consuming app's. Vitest lives in root
+`node_modules` and resolves these via dynamic import — listing them only in
+`apps/<app>/package.json` causes "Cannot find module 'jsdom'" at test time
+even when the lockfile shows it installed.
+
+If you also see this after a `git mv` of an app directory: stale
+`apps/<app>/node_modules/` blocks hoisting. Fix:
+`rm -rf apps/<app>/node_modules && npm install` from repo root.
