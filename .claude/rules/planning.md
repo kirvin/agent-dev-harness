@@ -1,5 +1,13 @@
 # Planning → Beads Integration
 
+See `.claude/rules/beads-workflow.md` for the philosophy: structure (deps, epics, descriptions) belongs in beads; prose docs and memory files are not substitutes for `bd ready`.
+
+## Session start
+
+Run `bd ready` to see unblocked issues. The dep graph is the source of truth for "what's next" — do not consult plan docs or memory files to override it. If `bd ready` shows the wrong thing, the fix is in beads (add a dep, edit a description), not in a markdown note.
+
+---
+
 After writing any implementation plan (using `ce:writing-plans` or manually), immediately create beads issues **before ending the session**. Do not wait for the user to ask.
 
 ## Required steps after a plan is written
