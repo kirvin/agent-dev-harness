@@ -22,6 +22,8 @@ bd close <id>         # Complete work
 - Run `bd prime` for detailed command reference and session close protocol
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
 
+**When the user gives a direct implementation instruction** (e.g. "make those changes", "implement X", "add Y to Z"), always create a beads issue with `bd create` before writing any code — even if no issue was pre-existing. Mark it `in_progress` immediately, then proceed.
+
 ## Session Completion
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
@@ -33,11 +35,11 @@ bd close <id>         # Complete work
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
-   git pull --rebase
-   bd dolt push
-   git push
-   git status  # MUST show "up to date with origin"
+   bd dolt push                # push beads data
+   git push -u origin HEAD     # works for feature branches; main is write-protected
+   git status                  # MUST show "up to date with origin"
    ```
+   Code changes belong on a feature branch (see `.claude/rules/git.md`). Pushing a WIP branch is fine — PR creation is decoupled from session end and happens when work is ready to merge.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
@@ -46,7 +48,7 @@ bd close <id>         # Complete work
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
+- If push fails, resolve and retry until it succeeds (note: pushes to `main` will fail by design when branch protection is enabled — branch first)
 <!-- END BEADS INTEGRATION -->
 
 

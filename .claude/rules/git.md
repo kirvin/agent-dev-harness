@@ -5,6 +5,22 @@ paths:
 
 # Git Commits
 
+## Branch before committing
+
+When `main` is branch-protected (direct pushes blocked), switch to a feature branch before any code or config commit:
+
+```bash
+git checkout -b <beads-id>-<short-slug>   # e.g. proj-abc1-add-foo
+```
+
+Use the active beads issue ID as the prefix when one exists. Commit on the branch, push the branch, and open a PR when the work is ready to merge. PR timing is decoupled from session end — push WIP branches at session close even if no PR is opened yet.
+
+Exceptions (no branch needed):
+- Beads-only changes (auto-export to Dolt, not git)
+- No file modifications at all (read-only sessions)
+
+If your project's `main` is *not* branch-protected, this section can be ignored — but enabling branch protection is recommended once the project has more than one contributor (human or AI).
+
 ## Always include the active beads task ID
 
 Before writing a commit message, run `bd list --status=in_progress` to find the
