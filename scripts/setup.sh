@@ -218,7 +218,7 @@ else
   echo "    A personal access token is required (Figma → Settings → Account → Personal access tokens)."
   echo ""
   read -r -p "    Set up Figma integration? [y/N] " FIGMA_ANSWER
-  if [[ "${FIGMA_ANSWER,,}" == "y" ]]; then
+  if [[ "$FIGMA_ANSWER" == [Yy] ]]; then
     read -r -p "    Paste your Figma personal access token: " FIGMA_TOKEN
     if [[ -n "$FIGMA_TOKEN" ]]; then
       echo "FIGMA_API_TOKEN=$FIGMA_TOKEN" >> "$ENV_ACTIVE_FILE"
