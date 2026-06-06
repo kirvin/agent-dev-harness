@@ -419,63 +419,33 @@ if [[ "$DRY_RUN" == false ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 10. .claude/settings.local.json — AWS Bedrock configuration
+# 10. .claude/settings.local.json — remove legacy AWS Bedrock auth
 # ---------------------------------------------------------------------------
+#
+# Claude Code authentication is NOT configured by this toolkit. Provisioned
+# projects use the developer's Claude Pro/Max subscription (`claude` → log in
+# with your Anthropic account). Earlier toolkit versions wrote Bedrock/AWS env
+# here; strip those specific keys so existing projects switch to the
+# subscription. Anything else in settings.local.json (e.g. the Figma token) is
+# preserved.
 
-step "Configuring AWS Bedrock in settings.local.json"
+step "Removing legacy Bedrock config from settings.local.json (if present)"
 
 SETTINGS_LOCAL_DST="$TARGET_DIR/.claude/settings.local.json"
 
-# Read AWS_PROFILE_NAME from source .env.local or .env (agent-dev-harness repo)
-# Try .env.local first (gitignored), then .env (may be source-controlled)
-# The target project won't have .env yet - that's created after install
-AWS_PROFILE_VALUE=""
-if [[ -f "$SOURCE_DIR/.env.local" ]]; then
-  # shellcheck source=/dev/null
-  AWS_PROFILE_VALUE=$(grep '^AWS_PROFILE_NAME=' "$SOURCE_DIR/.env.local" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || echo "")
-elif [[ -f "$SOURCE_DIR/.env" ]]; then
-  # shellcheck source=/dev/null
-  AWS_PROFILE_VALUE=$(grep '^AWS_PROFILE_NAME=' "$SOURCE_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || echo "")
-fi
-
-# Fall back to placeholder if neither file exists or AWS_PROFILE_NAME not set
-if [[ -z "$AWS_PROFILE_VALUE" ]]; then
-  AWS_PROFILE_VALUE="<YOUR_AWS_SSO_PROFILE>"
-  warn "Source .env.local/.env not found or AWS_PROFILE_NAME not set — using placeholder"
-fi
-
-if [[ "$DRY_RUN" == true ]]; then
-  ok "[dry-run] would merge AWS config into settings.local.json (profile: $AWS_PROFILE_VALUE)"
+if [[ ! -f "$SETTINGS_LOCAL_DST" ]]; then
+  ok "No settings.local.json — nothing to clean"
 elif ! command -v jq &>/dev/null; then
-  warn "jq not found — skipping settings.local.json merge; configure AWS manually in $SETTINGS_LOCAL_DST"
+  warn "jq not found — review $SETTINGS_LOCAL_DST and remove Bedrock env (CLAUDE_CODE_USE_BEDROCK, AWS_PROFILE, AWS_REGION, awsAuthRefresh) manually"
+elif ! jq -e '(.env.CLAUDE_CODE_USE_BEDROCK // .env.AWS_PROFILE // .env.AWS_REGION // .awsAuthRefresh) != null' "$SETTINGS_LOCAL_DST" >/dev/null 2>&1; then
+  ok "settings.local.json has no Bedrock config — nothing to clean"
+elif [[ "$DRY_RUN" == true ]]; then
+  ok "[dry-run] would strip CLAUDE_CODE_USE_BEDROCK / AWS_PROFILE / AWS_REGION / awsAuthRefresh"
 else
-  mkdir -p "$TARGET_DIR/.claude"
-
-  # Create AWS config JSON
-  AWS_CONFIG=$(jq -n \
-    --arg profile "$AWS_PROFILE_VALUE" \
-    '{
-      awsAuthRefresh: ("aws sso login --profile " + $profile),
-      env: {
-        AWS_PROFILE: $profile,
-        CLAUDE_CODE_USE_BEDROCK: "1",
-        AWS_REGION: "us-east-1"
-      }
-    }')
-
-  if [[ ! -f "$SETTINGS_LOCAL_DST" ]]; then
-    # Create new settings.local.json
-    echo "$AWS_CONFIG" > "$SETTINGS_LOCAL_DST"
-    ok "Created settings.local.json with AWS config (profile: $AWS_PROFILE_VALUE)"
-  else
-    # Merge with existing settings.local.json
-    MERGED=$(jq -s \
-      --argjson aws_config "$AWS_CONFIG" \
-      '.[0] as $existing | $existing * $aws_config | .env = (($existing.env // {}) * ($aws_config.env // {}))' \
-      "$SETTINGS_LOCAL_DST")
-    echo "$MERGED" > "$SETTINGS_LOCAL_DST"
-    ok "Merged AWS config into settings.local.json (profile: $AWS_PROFILE_VALUE)"
-  fi
+  CLEANED=$(jq 'del(.env.CLAUDE_CODE_USE_BEDROCK, .env.AWS_PROFILE, .env.AWS_REGION, .awsAuthRefresh)
+                | if (.env // {} | length) == 0 then del(.env) else . end' "$SETTINGS_LOCAL_DST")
+  echo "$CLEANED" > "$SETTINGS_LOCAL_DST"
+  ok "Removed legacy Bedrock auth from settings.local.json (other settings preserved)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -527,7 +497,10 @@ else
   echo "  Next step — switch to your project and run setup:"
   echo ""
   echo -e "    ${YELLOW}cd $TARGET_DIR${NC}"
-  echo -e "    ${YELLOW}cp .env.example .env${NC}   # then set AWS_PROFILE_NAME"
   echo -e "    ${YELLOW}./scripts/setup.sh${NC}"
+  echo ""
+  echo "  Then start Claude Code and log in with your Anthropic account (Pro/Max):"
+  echo ""
+  echo -e "    ${YELLOW}claude${NC}"
   echo ""
 fi

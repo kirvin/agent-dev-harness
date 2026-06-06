@@ -7,7 +7,7 @@ Personal Claude Code toolkit for [@kirvin](https://github.com/kirvin). Distribut
 This repo serves two purposes:
 
 1. **Plugin marketplace** — hosts the `kf` plugin, which bundles all custom skills (workflow methodology, design, repo knowledge, session lifecycle). Projects point Claude Code here to install and update the plugin.
-2. **Project installer** — `scripts/install-to-project.sh` copies the rules, workflow conventions, and AWS Bedrock config into any existing project repo. `scripts/new-project.sh` creates a new repo from scratch with everything already configured.
+2. **Project installer** — `scripts/install-to-project.sh` copies the rules and workflow conventions into any existing project repo. `scripts/new-project.sh` creates a new repo from scratch with everything already configured. Claude Code authenticates via your Pro/Max subscription — no Bedrock/AWS setup required.
 
 If you're working on a project that has the `kf` plugin installed, this is where those skills live. If something in the Claude Code workflow feels wrong in one of kirvin's projects, the source is probably here.
 
@@ -34,7 +34,7 @@ plugins/
 scripts/
   new-project.sh          — Create a new repo pre-configured with this toolkit
   install-to-project.sh   — Install this toolkit into an existing repo
-  setup.sh                — Per-machine setup (Homebrew, AWS, plugins, beads); copied into target projects by install-to-project.sh
+  setup.sh                — Per-machine setup (Homebrew, Claude Code, plugins, beads); copied into target projects by install-to-project.sh
   generate-plugin-skills.js — Sync .agents/skills/ into plugins/kf/skills/
 
 CLAUDE.md                 — Template project entry point

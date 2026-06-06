@@ -6,8 +6,7 @@ Never hardcode credentials, tokens, or secrets in source files, commit messages,
 
 | Credential type | Variable name | File |
 |----------------|---------------|------|
-| AWS SSO profile name | `AWS_PROFILE_NAME` | `.env` |
-| AWS access keys (if not SSO) | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | `~/.aws/credentials` only — never `.env` |
+| AWS profile/keys (deploy-to-AWS projects only) | `AWS_PROFILE` / `AWS_ACCESS_KEY_ID` etc. | `~/.aws/config` (SSO) or `~/.aws/credentials` — never `.env` |
 | Figma API token | `FIGMA_API_TOKEN` | `.env.local` (gitignored) |
 | GitHub token | managed by `gh auth` | system keychain |
 | Beads credentials | auto-managed | `.beads/.beads-credential-key` (gitignored) |
