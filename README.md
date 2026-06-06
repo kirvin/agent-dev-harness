@@ -117,8 +117,12 @@ See `docs/deployment-and-release.md` for the full release process. Short version
 Rules and scripts aren't auto-synced. To push an update to an existing project:
 
 ```bash
+make update-project target=/path/to/existing-project          # convenience wrapper
+# or, equivalently:
 ./scripts/install-to-project.sh /path/to/existing-project --update
 ```
+
+Add `dry-run=1` (or `--dry-run`) to preview without writing.
 
 `--update` refreshes harness-managed files — `scripts/` (including `setup.sh`),
 `.claude/rules/`, `statusLine.sh`, `AGENTS.md`, `Brewfile`, `.env.example` — and

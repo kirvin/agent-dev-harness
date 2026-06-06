@@ -1,4 +1,4 @@
-.PHONY: help plugin-release bd-close install-to-project diagnose
+.PHONY: help plugin-release bd-close install-to-project update-project diagnose
 .DEFAULT_GOAL := help
 
 help: ## Show this help
@@ -19,6 +19,13 @@ install-to-project: ## Install toolkit into a project (target=/path; force=1, up
 		exit 1; \
 	fi
 	./scripts/install-to-project.sh $(target) $(if $(force),--force) $(if $(update),--update) $(if $(dry-run),--dry-run)
+
+update-project: ## Refresh harness-managed files in an installed project (target=/path; dry-run=1)
+	@if [ -z "$(target)" ]; then \
+		echo "Error: target path required. Usage: make update-project target=/path/to/project"; \
+		exit 1; \
+	fi
+	./scripts/install-to-project.sh $(target) --update $(if $(dry-run),--dry-run)
 
 diagnose: ## Run browser diagnostic against a URL (url=http://..., har=1 for HAR capture)
 	cd scripts/debug && node diagnose-url.js $(url) $(if $(har),--har,)
