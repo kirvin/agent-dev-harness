@@ -212,14 +212,21 @@ step "Copying CLAUDE.md"
 CLAUDE_SRC="$SOURCE_DIR/CLAUDE.md"
 CLAUDE_DST="$TARGET_DIR/CLAUDE.md"
 
-# Render the full target CLAUDE.md: title/intro, then the toolkit-owned sections
-# wrapped in guard markers, then the user-editable sections (templated) BELOW the
-# END guard. Keeping user content below the guard is what makes --update safe:
-# the guarded region can be replaced wholesale without touching anything a
-# developer has written.
+# Render the full target CLAUDE.md: title/intro and the bd-managed BEADS block,
+# then the toolkit-owned sections wrapped in guard markers, then the user-editable
+# sections (templated) BELOW the END guard. Two invariants make --update safe:
+#   1. User content lives below the END guard, so the guarded region can be
+#      replaced wholesale without touching anything a developer has written.
+#   2. The bd-managed `<!-- BEGIN/END BEADS INTEGRATION -->` block stays OUTSIDE
+#      the guard — beads owns that region via its own markers, and --update must
+#      not overwrite each project's (often newer) Beads block with the source's.
 render_claude_md() {
   awk -v gb="$CLAUDE_GUARD_BEGIN" -v ge="$CLAUDE_GUARD_END" '
-    BEGIN { seen = 0; harness = "" }
+    BEGIN { seen = 0; in_beads = 0; harness = "" }
+    # Pass the bd-managed BEADS INTEGRATION block through verbatim, in place,
+    # outside the agent-dev-harness guard.
+    /<!-- BEGIN BEADS INTEGRATION/ { seen = 1; in_beads = 1; print; next }
+    in_beads                       { print; if ($0 ~ /<!-- END BEADS INTEGRATION/) in_beads = 0; next }
     /^## Build & Test/          { seen = 1; cur = "skip"; next }
     /^## Architecture Overview/ { seen = 1; cur = "skip"; next }
     /^## Conventions & Patterns/{ seen = 1; cur = "skip"; next }
