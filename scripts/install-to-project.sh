@@ -2,11 +2,16 @@
 # install-to-project.sh — Copy the agent-dev-harness toolkit into an existing project.
 #
 # Usage (from the agent-dev-harness directory):
-#   ./scripts/install-to-project.sh TARGET_DIR [--force] [--dry-run]
+#   ./scripts/install-to-project.sh TARGET_DIR [--force] [--update] [--dry-run]
 #
 # TARGET_DIR  Path to the project repo to install into (must be a git repo).
 # --dry-run   Print what would be copied without writing anything.
 # --force     Overwrite existing files (default: skip existing).
+# --update    Refresh harness-managed files in an already-installed project:
+#             overwrites whole-file toolkit artifacts (scripts/, .claude/rules/,
+#             statusLine.sh, AGENTS.md, Brewfile, .env.example) and re-renders the
+#             guarded harness block in CLAUDE.md while preserving user content.
+#             Unlike --force, it never clobbers user-owned sections or settings.
 #
 # After this script completes, switch to the target project and run:
 #   cd TARGET_DIR && ./scripts/setup.sh
@@ -28,20 +33,31 @@ step() { echo -e "\n${YELLOW}==>${NC} $*"; }
 # ---------------------------------------------------------------------------
 
 FORCE=false
+UPDATE=false
 DRY_RUN=false
 TARGET_DIR=""
 
 for arg in "$@"; do
   case "$arg" in
     --force)   FORCE=true ;;
+    --update)  UPDATE=true ;;
     --dry-run) DRY_RUN=true ;;
     -*)        fail "Unknown option: $arg" ;;
     *)         TARGET_DIR="$arg" ;;
   esac
 done
 
+if [[ "$FORCE" == true && "$UPDATE" == true ]]; then
+  fail "--force and --update are mutually exclusive. Use --update to refresh harness-managed files while preserving user content; --force to overwrite everything."
+fi
+
+# Harness-managed CLAUDE.md guard markers. The generated CLAUDE.md wraps the
+# toolkit-owned block in these; --update replaces only the guarded region.
+CLAUDE_GUARD_BEGIN="<!-- BEGIN agent-dev-harness:managed (auto-generated — refreshed by install-to-project.sh --update; add your own content below the END marker) -->"
+CLAUDE_GUARD_END="<!-- END agent-dev-harness:managed -->"
+
 if [[ -z "$TARGET_DIR" ]]; then
-  echo "Usage: $0 TARGET_DIR [--force] [--dry-run]" >&2
+  echo "Usage: $0 TARGET_DIR [--force] [--update] [--dry-run]" >&2
   echo "" >&2
   echo "  TARGET_DIR  Path to the project repo to install into." >&2
   exit 1
@@ -86,6 +102,7 @@ echo "Target   : $TARGET_DIR"
 echo "Toolkit  : $ADP_MARKETPLACE_URL (plugin: $ADP_PLUGIN_NAME)"
 [[ "$DRY_RUN" == true ]] && echo "Mode     : DRY RUN — no files will be written"
 [[ "$FORCE"   == true ]] && echo "Mode     : FORCE — existing files will be overwritten"
+[[ "$UPDATE"  == true ]] && echo "Mode     : UPDATE — refreshing harness-managed files, preserving user content"
 echo
 
 # ---------------------------------------------------------------------------
@@ -100,8 +117,8 @@ copy_file() {
     warn "Source not found, skipping: $src"
     return
   fi
-  if [[ -f "$dst" ]] && [[ "$FORCE" != true ]]; then
-    warn "$label already exists — skipping (use --force to overwrite)"
+  if [[ -f "$dst" ]] && [[ "$FORCE" != true ]] && [[ "$UPDATE" != true ]]; then
+    warn "$label already exists — skipping (use --force or --update to overwrite)"
     return
   fi
   if [[ "$DRY_RUN" == true ]]; then
@@ -195,21 +212,29 @@ step "Copying CLAUDE.md"
 CLAUDE_SRC="$SOURCE_DIR/CLAUDE.md"
 CLAUDE_DST="$TARGET_DIR/CLAUDE.md"
 
-if [[ ! -f "$CLAUDE_SRC" ]]; then
-  warn "No CLAUDE.md in source — skipping"
-elif [[ -f "$CLAUDE_DST" ]] && [[ "$FORCE" != true ]]; then
-  warn "CLAUDE.md already exists — skipping (use --force to overwrite)"
-else
-  # Extract project name from target directory
-  TARGET_PROJECT_NAME=$(basename "$TARGET_DIR")
-
-  # Copy CLAUDE.md but replace project-specific sections with generic templates
-  awk '
-    BEGIN { in_build_test = 0; in_arch = 0; in_conventions = 0 }
-
-    # Start of Build & Test section
-    /^## Build & Test/ {
-      print $0
+# Render the full target CLAUDE.md: title/intro, then the toolkit-owned sections
+# wrapped in guard markers, then the user-editable sections (templated) BELOW the
+# END guard. Keeping user content below the guard is what makes --update safe:
+# the guarded region can be replaced wholesale without touching anything a
+# developer has written.
+render_claude_md() {
+  awk -v gb="$CLAUDE_GUARD_BEGIN" -v ge="$CLAUDE_GUARD_END" '
+    BEGIN { seen = 0; harness = "" }
+    /^## Build & Test/          { seen = 1; cur = "skip"; next }
+    /^## Architecture Overview/ { seen = 1; cur = "skip"; next }
+    /^## Conventions & Patterns/{ seen = 1; cur = "skip"; next }
+    /^## /                      { seen = 1; cur = "keep"; harness = harness $0 "\n"; next }
+    {
+      if (!seen)         { print; next }      # title + intro, before any section
+      if (cur == "keep") { harness = harness $0 "\n" }
+      # cur == "skip": drop the project-specific body (re-templated below)
+    }
+    END {
+      print gb
+      printf "%s", harness
+      print ge
+      print ""
+      print "## Build & Test"
       print ""
       print "_Add your build and test commands here_"
       print ""
@@ -218,47 +243,62 @@ else
       print "# npm install"
       print "# npm test"
       print "```"
-      in_build_test = 1
-      next
-    }
-
-    # Start of Architecture Overview section
-    /^## Architecture Overview/ {
-      print $0
+      print ""
+      print "## Architecture Overview"
       print ""
       print "_Add a brief overview of your project architecture_"
-      in_arch = 1
-      next
-    }
-
-    # Start of Conventions & Patterns section
-    /^## Conventions & Patterns/ {
-      print $0
+      print ""
+      print "## Conventions & Patterns"
       print ""
       print "_Add your project-specific conventions here_"
-      in_conventions = 1
-      next
     }
+  ' "$CLAUDE_SRC"
+}
 
-    # End of file or new section stops the replacement
-    /^## / {
-      if (in_build_test || in_arch || in_conventions) {
-        in_build_test = 0
-        in_arch = 0
-        in_conventions = 0
-        print $0
-        next
-      }
-    }
-
-    # Skip lines within sections being replaced
-    in_build_test || in_arch || in_conventions { next }
-
-    # Print all other lines
-    { print $0 }
-  ' "$CLAUDE_SRC" > "$CLAUDE_DST"
-
-  ok "CLAUDE.md (project-specific sections replaced with templates)"
+if [[ ! -f "$CLAUDE_SRC" ]]; then
+  warn "No CLAUDE.md in source — skipping"
+elif [[ ! -f "$CLAUDE_DST" ]] || [[ "$FORCE" == true ]]; then
+  # Fresh install or forced overwrite — render the whole file.
+  if [[ "$DRY_RUN" == true ]]; then
+    ok "[dry-run] would write CLAUDE.md (guarded harness block + templated project sections)"
+  else
+    render_claude_md > "$CLAUDE_DST"
+    ok "CLAUDE.md (harness block guarded; project sections templated)"
+  fi
+elif [[ "$UPDATE" == true ]]; then
+  # Refresh ONLY the guarded harness region; preserve everything else.
+  if grep -qF "$CLAUDE_GUARD_BEGIN" "$CLAUDE_DST" && grep -qF "$CLAUDE_GUARD_END" "$CLAUDE_DST"; then
+    if [[ "$DRY_RUN" == true ]]; then
+      ok "[dry-run] would refresh guarded harness block in CLAUDE.md (user content preserved)"
+    else
+      NEWBLOCK_TMP=$(mktemp)
+      SPLICE_TMP=$(mktemp)
+      # Extract the freshly-rendered guarded region (BEGIN..END inclusive).
+      render_claude_md \
+        | awk -v gb="$CLAUDE_GUARD_BEGIN" -v ge="$CLAUDE_GUARD_END" \
+            '$0==gb{f=1} f{print} $0==ge{exit}' > "$NEWBLOCK_TMP"
+      # Replace the target's guarded region with the fresh block, in place.
+      awk -v gb="$CLAUDE_GUARD_BEGIN" -v ge="$CLAUDE_GUARD_END" -v nb="$NEWBLOCK_TMP" '
+        BEGIN { while ((getline line < nb) > 0) newblock = newblock line "\n" }
+        $0 == gb            { printf "%s", newblock; skipping = 1; next }
+        skipping && $0 == ge { skipping = 0; next }
+        skipping            { next }
+        { print }
+      ' "$CLAUDE_DST" > "$SPLICE_TMP"
+      mv "$SPLICE_TMP" "$CLAUDE_DST"
+      rm -f "$NEWBLOCK_TMP"
+      ok "CLAUDE.md (refreshed guarded harness block; user content preserved)"
+    fi
+  else
+    warn "CLAUDE.md has no agent-dev-harness guard markers (legacy install) — skipping.
+    Review upstream changes and re-run with --force to regenerate, or wrap the
+    toolkit-managed block manually with these markers to make it update-ready:
+      $CLAUDE_GUARD_BEGIN
+      ...
+      $CLAUDE_GUARD_END"
+  fi
+else
+  warn "CLAUDE.md already exists — skipping (use --update to refresh the harness block, or --force to overwrite)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -361,8 +401,8 @@ step "Copying scripts/"
 
 # setup.sh: inject marketplace URL and plugin name before copying
 SETUP_DST="$TARGET_DIR/scripts/setup.sh"
-if [[ -f "$SETUP_DST" ]] && [[ "$FORCE" != true ]]; then
-  warn "setup.sh already exists — skipping (use --force to overwrite)"
+if [[ -f "$SETUP_DST" ]] && [[ "$FORCE" != true ]] && [[ "$UPDATE" != true ]]; then
+  warn "setup.sh already exists — skipping (use --force or --update to overwrite)"
 elif [[ "$DRY_RUN" == true ]]; then
   ok "[dry-run] would copy setup.sh (injecting ADP_MARKETPLACE_URL=$ADP_MARKETPLACE_URL, ADP_PLUGIN_NAME=$ADP_PLUGIN_NAME)"
 else
@@ -474,11 +514,20 @@ fi
 # ---------------------------------------------------------------------------
 
 echo ""
-echo -e "${GREEN}Files installed into $TARGET_DIR${NC}"
-echo ""
-echo "  Next step — switch to your project and run setup:"
-echo ""
-echo -e "    ${YELLOW}cd $TARGET_DIR${NC}"
-echo -e "    ${YELLOW}cp .env.example .env${NC}   # then set AWS_PROFILE_NAME"
-echo -e "    ${YELLOW}./scripts/setup.sh${NC}"
-echo ""
+if [[ "$UPDATE" == true ]]; then
+  echo -e "${GREEN}Harness-managed files refreshed in $TARGET_DIR${NC}"
+  echo ""
+  echo "  Review the changes before committing:"
+  echo ""
+  echo -e "    ${YELLOW}cd $TARGET_DIR && git diff${NC}"
+  echo ""
+else
+  echo -e "${GREEN}Files installed into $TARGET_DIR${NC}"
+  echo ""
+  echo "  Next step — switch to your project and run setup:"
+  echo ""
+  echo -e "    ${YELLOW}cd $TARGET_DIR${NC}"
+  echo -e "    ${YELLOW}cp .env.example .env${NC}   # then set AWS_PROFILE_NAME"
+  echo -e "    ${YELLOW}./scripts/setup.sh${NC}"
+  echo ""
+fi

@@ -58,7 +58,9 @@ For an existing repo:
 cd /path/to/your-project && ./scripts/setup.sh
 ```
 
-`install-to-project.sh` is safe to re-run. Use `--force` to overwrite files that already exist.
+`install-to-project.sh` is safe to re-run. To refresh an already-installed project, use
+`--update` (overwrites harness-owned files, preserves your edits); `--force` overwrites
+everything including your customized `CLAUDE.md`.
 
 ## Prerequisites (one-time per machine)
 
@@ -115,7 +117,19 @@ See `docs/deployment-and-release.md` for the full release process. Short version
 Rules and scripts aren't auto-synced. To push an update to an existing project:
 
 ```bash
-./scripts/install-to-project.sh /path/to/existing-project --force
+./scripts/install-to-project.sh /path/to/existing-project --update
 ```
 
-This re-copies changed files. Review the diff in the target project before committing.
+`--update` refreshes harness-managed files — `scripts/` (including `setup.sh`),
+`.claude/rules/`, `statusLine.sh`, `AGENTS.md`, `Brewfile`, `.env.example` — and
+re-renders the guarded harness block in `CLAUDE.md` while leaving everything you've
+written below the guard untouched. `settings.json` and `.gitignore` are merged, never
+clobbered.
+
+Use `--force` instead only for a clean-slate overwrite (it replaces your customized
+`CLAUDE.md` with templates). Either way, review the diff in the target project before
+committing.
+
+> **Legacy projects:** a `CLAUDE.md` installed before guard markers existed will be
+> skipped by `--update` with a notice. Run once with `--force` (then re-apply your
+> project sections) to make it update-ready going forward.
