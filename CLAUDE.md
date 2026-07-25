@@ -68,9 +68,9 @@ This is **@kirvin's personal Claude Code toolkit** (`github.com/kirvin/agent-dev
 Two things happen here:
 
 1. **Plugin authoring** — All custom skills live in `plugins/kf/`. When a consuming project runs `claude plugin update kf@agent-dev-harness`, it pulls from this repo.
-2. **Project provisioning** — `scripts/install-to-project.sh` copies rules, scripts, and AWS Bedrock config into any existing project. `scripts/new-project.sh` creates a new repo from scratch.
+2. **Project provisioning** — `scripts/install-to-project.sh` copies rules, scripts, and workflow config into any existing project. `scripts/new-project.sh` creates a new repo from scratch. Provisioned projects authenticate Claude Code via the developer's Pro/Max subscription — no Bedrock/AWS config is written.
 
-If you're working in a project that has the `kf` plugin installed and something is wrong with a skill, the source is in `plugins/kf/skills/` here. If a rule needs to change across all projects, update it here and re-run `install-to-project.sh --force` against each project.
+If you're working in a project that has the `kf` plugin installed and something is wrong with a skill, the source is in `plugins/kf/skills/` here. If a rule needs to change across all projects, update it here and re-run `install-to-project.sh --update` against each project (refreshes harness-managed files, preserves each project's own content).
 
 > Note: this repo was previously named `agent-dev-plugins` and then `claude-config`. If you see either name anywhere in comments or error messages, it's stale and should be updated to `agent-dev-harness`.
 
@@ -82,9 +82,9 @@ Key components:
   - **Hand-authored** (`spec-first`, `repo-knowledge-*`, `task-completion`, `retro`, `session-close`, `ui-ux-pro-max`): edit directly in `plugins/kf/skills/`
   - **Generated** (design skill wrappers like `design-taste-frontend`, `high-end-visual-design`, etc.): source lives in `.agents/skills/`, synced into `plugins/kf/skills/` via `make plugin-release`
 - `.claude/rules/` — Rule files that trigger skill activations and enforce workflow patterns. Copied into target projects by `install-to-project.sh`.
-- `scripts/install-to-project.sh` — Copies the toolkit into an existing project repo (includes AWS Bedrock config). Run via `make install-to-project target=/path/to/project`. Safe to re-run; use `force=1` to overwrite.
+- `scripts/install-to-project.sh` — Copies the toolkit into an existing project repo. Run via `make install-to-project target=/path/to/project`. Safe to re-run; use `update=1` to refresh harness-managed files while preserving project content, or `force=1` for a clean-slate overwrite.
 - `scripts/new-project.sh` — Creates a new private GitHub repo under the kirvin account and runs the full install sequence.
-- `scripts/setup.sh` — Per-machine setup (Homebrew, AWS, plugins, beads). This file is a template; `install-to-project.sh` injects `ADP_MARKETPLACE_URL` and `ADP_PLUGIN_NAME` before copying it into a target project. Do not run it from this repo directly.
+- `scripts/setup.sh` — Per-machine setup (Homebrew, Claude Code, plugins, beads). This file is a template; `install-to-project.sh` injects `ADP_MARKETPLACE_URL` and `ADP_PLUGIN_NAME` before copying it into a target project. Do not run it from this repo directly.
 - `scripts/generate-plugin-skills.js` — Syncs `.agents/skills/` into `plugins/kf/skills/` (for the generated design skill wrappers).
 
 ## Secure Coding

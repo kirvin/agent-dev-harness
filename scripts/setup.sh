@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup.sh — Set up this project for Claude Code via AWS Bedrock.
+# setup.sh — Set up this project for Claude Code (Pro/Max subscription auth).
 #
 # Usage (from this project's root directory):
 #   ./scripts/setup.sh
@@ -64,60 +64,75 @@ else
 fi
 
 # ──────────────────────────────────────────────
-# 3. .env file (.env.local takes precedence)
+# 3. .env file (optional — for integrations like Figma)
 # ──────────────────────────────────────────────
 step "Checking .env..."
 ENV_FILE="$REPO_ROOT/.env"
 ENV_LOCAL_FILE="$REPO_ROOT/.env.local"
 
-# Try .env.local first (gitignored), then .env (may be source-controlled)
+# Try .env.local first (gitignored), then .env (may be source-controlled).
+# Neither is required: Claude Code auth uses your Pro/Max subscription, not env vars.
 if [[ -f "$ENV_LOCAL_FILE" ]]; then
   # shellcheck source=/dev/null
   source "$ENV_LOCAL_FILE"
-  ENV_SOURCE=".env.local"
+  ok ".env.local loaded"
 elif [[ -f "$ENV_FILE" ]]; then
   # shellcheck source=/dev/null
   source "$ENV_FILE"
-  ENV_SOURCE=".env"
+  ok ".env loaded"
 else
-  fail ".env not found. Copy .env.example and fill in your AWS profile name:
-    cp $REPO_ROOT/.env.example $REPO_ROOT/.env
-  Or create .env.local (gitignored) if .env is source-controlled."
-fi
-
-if [[ -z "${AWS_PROFILE_NAME:-}" ]]; then
-  fail "AWS_PROFILE_NAME is not set in $ENV_SOURCE. Edit $REPO_ROOT/$ENV_SOURCE."
-fi
-ok "$ENV_SOURCE loaded (AWS_PROFILE_NAME=$AWS_PROFILE_NAME)"
-
-# ──────────────────────────────────────────────
-# 4. AWS Bedrock model access
-# ──────────────────────────────────────────────
-step "Checking Bedrock access..."
-if ! aws bedrock list-foundation-models --profile "$AWS_PROFILE_NAME" &>/dev/null; then
-  warn "Could not reach AWS Bedrock."
-  echo "    Verify your IAM role has the 'bedrock:InvokeModel' permission"
-  echo "    and that Claude models are enabled in the AWS Bedrock console."
-else
-  ok "Bedrock reachable."
+  ok "No .env found — skipping (only needed for optional integrations like Figma)"
 fi
 
 # ──────────────────────────────────────────────
-# 5. Claude Code
+# 4. Claude Code
 # ──────────────────────────────────────────────
 step "Checking Claude Code..."
 if ! command -v claude &>/dev/null; then
   fail "Claude Code not found. Install it: brew install --cask claude-code"
 fi
 ok "Claude Code: $(claude --version 2>/dev/null | head -1)"
+echo "    Auth: this toolkit uses your Claude Pro/Max subscription."
+echo "    If you're not logged in yet, run 'claude' and choose 'Log in with your Anthropic account'."
 
 # ──────────────────────────────────────────────
-# 6. Register plugin marketplaces (once per developer machine)
+# 5. Register plugin marketplaces (once per developer machine)
 # ──────────────────────────────────────────────
-step "Registering plugin marketplaces..."
 
 MARKETPLACE_DIR="$HOME/.claude/plugins/marketplaces"
-PLUGIN_CACHE="$HOME/.claude/plugins/cache"
+
+# True when <plugin-id> (e.g. kf@agent-dev-harness) is actually ENABLED for this
+# project — user scope, or project scope matching this repo. We check enablement
+# rather than cache-dir presence so a cached-but-disabled plugin self-heals.
+plugin_enabled() {
+  command -v jq &>/dev/null || return 1
+  claude plugin list --json 2>/dev/null \
+    | jq -e --arg id "$1" --arg proj "$REPO_ROOT" \
+        'any(.[]; .id == $id and .enabled == true
+                  and (.scope == "user" or .projectPath == $proj))' \
+        >/dev/null 2>&1
+}
+
+# Install + enable a plugin at project scope, idempotently. install handles the
+# not-cached case; enable handles the cached-but-disabled case.
+ensure_plugin() {
+  local id="$1" label="${2:-$1}"
+  if plugin_enabled "$id"; then
+    ok "$label plugin already enabled"
+    return
+  fi
+  echo "    Installing/enabling $id..."
+  claude plugin install "$id" --scope project >/dev/null 2>&1 || true
+  claude plugin enable  "$id" --scope project >/dev/null 2>&1 || true
+  if plugin_enabled "$id"; then
+    ok "Enabled $label plugin"
+  else
+    warn "Could not enable $id — run manually:
+    claude plugin install $id --scope project && claude plugin enable $id --scope project"
+  fi
+}
+
+step "Registering plugin marketplaces..."
 
 if [[ ! -d "$MARKETPLACE_DIR/$ADP_MARKETPLACE_NAME" ]]; then
   echo "    Registering $ADP_MARKETPLACE_NAME marketplace ($ADP_MARKETPLACE_URL)..."
@@ -137,33 +152,52 @@ else
   ok "claude-essentials marketplace already registered"
 fi
 
+# Remove stale installs left over from earlier marketplace names. This repo was
+# renamed agent-dev-plugins → claude-config → agent-dev-harness; old installs
+# (kf@claude-config, kf@agent-dev-plugins) linger as disabled duplicates.
+STALE_MARKETPLACES="claude-config agent-dev-plugins"
+if command -v jq &>/dev/null; then
+  CLEANED=0
+  while IFS=$'\t' read -r stale_id stale_scope; do
+    [[ -z "$stale_id" ]] && continue
+    echo "    Uninstalling stale $stale_id ($stale_scope)..."
+    if claude plugin uninstall "$stale_id" --scope "$stale_scope" -y >/dev/null 2>&1; then
+      ok "Removed stale $stale_id ($stale_scope)"; CLEANED=1
+    else
+      warn "Could not remove $stale_id — run: claude plugin uninstall $stale_id --scope $stale_scope -y"
+    fi
+  done < <(
+    claude plugin list --json 2>/dev/null \
+      | jq -r --arg ms "$STALE_MARKETPLACES" \
+          '($ms | split(" ")) as $stale
+           | .[] | select((.id | split("@")[1]) as $m | $stale | index($m))
+           | "\(.id)\t\(.scope)"' \
+      | sort -u
+  )
+  for ms in $STALE_MARKETPLACES; do
+    if [[ -d "$MARKETPLACE_DIR/$ms" ]]; then
+      claude plugin marketplace remove "$ms" >/dev/null 2>&1 \
+        && { ok "Deregistered stale marketplace: $ms"; CLEANED=1; } \
+        || warn "Could not deregister marketplace $ms — run: claude plugin marketplace remove $ms"
+    fi
+  done
+  [[ "$CLEANED" == 0 ]] && ok "No stale plugins or marketplaces found"
+else
+  warn "jq not found — skipping stale-plugin cleanup"
+fi
+
 # ──────────────────────────────────────────────
-# 7. Install plugins into this project
+# 6. Install plugins into this project
 # ──────────────────────────────────────────────
 step "Installing plugins..."
 
 cd "$REPO_ROOT"
 
-if [[ ! -d "$PLUGIN_CACHE/$ADP_MARKETPLACE_NAME/$ADP_PLUGIN_NAME" ]]; then
-  echo "    Installing ${ADP_PLUGIN_NAME}@${ADP_MARKETPLACE_NAME}..."
-  claude plugin install "${ADP_PLUGIN_NAME}@${ADP_MARKETPLACE_NAME}" --scope project \
-    && ok "Installed ${ADP_PLUGIN_NAME} plugin" \
-    || warn "Failed — run manually: claude plugin install ${ADP_PLUGIN_NAME}@${ADP_MARKETPLACE_NAME} --scope project"
-else
-  ok "${ADP_PLUGIN_NAME} plugin already installed"
-fi
-
-if [[ ! -d "$PLUGIN_CACHE/claude-essentials/ce" ]]; then
-  echo "    Installing ce@claude-essentials..."
-  claude plugin install ce@claude-essentials --scope project \
-    && ok "Installed ce plugin" \
-    || warn "Failed — run manually: claude plugin install ce@claude-essentials --scope project"
-else
-  ok "ce plugin already installed"
-fi
+ensure_plugin "${ADP_PLUGIN_NAME}@${ADP_MARKETPLACE_NAME}" "$ADP_PLUGIN_NAME"
+ensure_plugin "ce@claude-essentials" "ce"
 
 # ──────────────────────────────────────────────
-# 8. Beads issue tracker
+# 7. Beads issue tracker
 # ──────────────────────────────────────────────
 step "Checking Beads..."
 if ! command -v bd &>/dev/null; then
@@ -193,7 +227,7 @@ else
 fi
 
 # ──────────────────────────────────────────────
-# 9. Git hooks
+# 8. Git hooks
 # ──────────────────────────────────────────────
 step "Checking git hooks..."
 if [[ -d "$REPO_ROOT/.beads" ]] && [[ ! -f "$REPO_ROOT/.git/hooks/pre-commit" ]]; then
@@ -205,7 +239,7 @@ else
 fi
 
 # ──────────────────────────────────────────────
-# 10. Figma integration (optional)
+# 9. Figma integration (optional)
 # ──────────────────────────────────────────────
 step "Figma integration (optional)..."
 
@@ -218,7 +252,7 @@ else
   echo "    A personal access token is required (Figma → Settings → Account → Personal access tokens)."
   echo ""
   read -r -p "    Set up Figma integration? [y/N] " FIGMA_ANSWER
-  if [[ "${FIGMA_ANSWER,,}" == "y" ]]; then
+  if [[ "$FIGMA_ANSWER" == [Yy] ]]; then
     read -r -p "    Paste your Figma personal access token: " FIGMA_TOKEN
     if [[ -n "$FIGMA_TOKEN" ]]; then
       echo "FIGMA_API_TOKEN=$FIGMA_TOKEN" >> "$ENV_ACTIVE_FILE"
@@ -237,9 +271,9 @@ fi
 echo ""
 echo -e "${GREEN}Setup complete.${NC}"
 echo ""
-echo "  Start Claude Code (via Bedrock):"
+echo "  Start Claude Code (log in with your Anthropic Pro/Max account if prompted):"
 echo "    cd $REPO_ROOT"
-echo "    claude code ."
+echo "    claude"
 echo ""
 echo "  See available work:"
 echo "    bd ready"
