@@ -87,14 +87,23 @@ The spec-first methodology uses six distinct layers. Each has a single job. Cont
 
 ---
 
-### 6. Plans (`plans/YYYY-MM-DD-[feature]/`)
+### 6. Plans (beads — an epic plus one issue per phase)
 
 **Job:** Break the spec into executable, phased implementation work.
 
+**This is the one layer with no document.** Layers 1–5 are durable specs that
+describe the system; a plan describes work in flight, and work in flight is what
+goes stale. A plan doc and a set of issues are two copies of the same structure,
+and the doc is the copy nobody updates — it becomes a false trail that reads as
+current. See `.claude/rules/planning.md` for where each part of a plan belongs.
+
 **Contains:**
-- Phase breakdown (one demoable deliverable per phase)
-- Task steps with explicit file paths
-- Verify commands per task
+- Epic description: problem, goal, scope, architecture, invariants, decisions
+- One issue per phase (one demoable deliverable each)
+- Task steps with explicit file paths, in the issue **description** — the whole
+  breakdown, not a pointer to it
+- Verify commands in the issue **acceptance** (`--acceptance`)
+- Sequencing as `bd dep add` edges — the deps *are* the plan
 - References to spec documents (not duplicates of them)
 
 **Does NOT contain:** Requirements, design decisions, invariants — those are the spec; the plan references them

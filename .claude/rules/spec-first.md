@@ -39,6 +39,12 @@ An open question with no category is a dead end. It will never appear in `bd rea
 | Technology decisions | `docs/adr/ADR-NNN-*.md` | Decision + alternatives + consequences |
 | System design | `docs/architecture.md` | Mermaid diagrams + prose |
 | Acceptance criteria | `docs/features/**/*.feature` | Gherkin Given/When/Then |
-| Implementation | `plans/YYYY-MM-DD-*/` | Phased tasks with verify steps |
+| Implementation | beads — an epic + one issue per phase | Phased tasks with verify steps, in issue descriptions |
+
+The implementation layer is the one that does **not** get a document. Phased
+tasks go straight into beads; see `.claude/rules/planning.md` for why and for
+where each part of a plan belongs. The layers above it are durable specs that
+describe the system; a plan describes work in flight, and work in flight is what
+goes stale.
 
 Full format guides, templates, and examples: `Skill(kf:spec-first)`.

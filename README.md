@@ -25,8 +25,9 @@ plugins/
     error-handling.md     — No silent failures; activates ce:handling-errors
     git.md                — Commit message conventions (includes beads task ID)
     npm.md                — Cross-platform lockfile conventions
-    planning.md           — After writing a plan, create beads issues immediately
+    planning.md           — Plans live in beads, not in plan docs; how to file them
     requirements.md       — Keep docs/requirements.md accurate when features ship
+    subagents.md          — Dispatch subagents by default; workflows stay opt-in
     testing.md            — Activates ce:writing-tests and ce:fixing-flaky-tests
     tdd.md                — Red-Green-Refactor for all features and bugs
     verification.md       — Run lint/build/tests before claiming work is done

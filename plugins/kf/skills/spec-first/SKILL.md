@@ -18,7 +18,7 @@ Load the reference that matches your current step:
 | 3 | Writing `docs/ears/*.md` system invariants | **EARS** | `references/ears-format.md` |
 | 4 | Writing `docs/adr/ADR-NNN-*.md` | **ADR** | `references/adr-format.md` |
 | 5 | Writing `docs/features/**/*.feature` | **Gherkin** | `references/gherkin-guide.md` |
-| 6 | Writing `plans/` implementation phases | **Plans** | `references/plan-structure.md` |
+| 6 | Breaking a spec into phased beads issues | **Plans** | `references/plan-structure.md` |
 
 Load the reference for your current step. Load multiple if the work spans steps.
 
@@ -131,12 +131,10 @@ docs/
       index.md            Feature index for this domain
       [behavior].feature  One file per user-facing behavior
 
-plans/
-  YYYY-MM-DD-[feature]/
-    README.md             Phase overview, tech stack, phase table, Beads IDs
-    phase-1-[name].md
-    phase-2-[name].md
 ```
+
+Plans are the one layer with no directory — they live in beads as an epic plus
+one issue per phase. See `references/plan-structure.md`.
 
 ---
 
