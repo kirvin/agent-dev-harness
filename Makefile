@@ -24,4 +24,4 @@ diagnose: ## Run browser diagnostic against a URL (url=http://..., har=1 for HAR
 	cd scripts/debug && node diagnose-url.js $(url) $(if $(har),--har,)
 
 test: ## Run script tests (needs bd and jq for beads-sync tests)
-	@set -e; for t in tests/*.test.sh; do bash "$$t"; done
+	@failed=0; for t in tests/*.test.sh; do bash "$$t" || failed=1; done; exit $$failed

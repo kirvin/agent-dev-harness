@@ -75,8 +75,10 @@ git status   # must show "up to date with origin"
 
 `beads-sync.sh` runs `bd dolt push` by default. If the project commits
 `.claude/kf.json` containing `{"beads": {"remotePush": false}}`, it never
-pushes. Instead it checks read-only that no Dolt remote or backup destination
-points off-machine, then runs a local `bd backup sync`.
+pushes. Instead it checks, read-only, that bd's `no-push` is on and that
+nothing else can carry beads data off the machine. These include auto-push,
+exports into the repo, remotes, and the backup location. Then it runs a local
+`bd backup sync`. The full opt-out setup is in `.claude/rules/session-close.md`.
 
 If `beads-sync.sh` exits non-zero, stop and show the user its message. Do not
 work around it: do not push to test the remote, and do not edit remotes or the

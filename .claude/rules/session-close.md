@@ -25,17 +25,27 @@ this conversation.
 ## Keeping beads data on this machine
 
 Some projects must never push beads data (for example, issues that hold private
-financial or personal details). To opt out, commit `.claude/kf.json`:
+financial or personal details). To opt out:
 
-```json
-{"beads": {"remotePush": false}}
-```
-
-Then configure a local backup once: `bd backup init <local path outside the repo>`.
+1. Commit `.claude/kf.json` next to `.beads/` (or at the git root):
+   ```json
+   {"beads": {"remotePush": false}}
+   ```
+2. Turn on bd's own kill switch and commit `.beads/config.yaml`:
+   `bd config set no-push true`. After this, a stray `bd dolt push` from any
+   source prints "skipping push" and sends nothing.
+3. Configure a local backup once: `bd backup init <path>`. The path must be
+   outside the repo and not in a cloud-synced or network folder (Dropbox,
+   iCloud, Google Drive, OneDrive, a NAS mount).
 
 With the opt-out set, session-close never runs `bd dolt push`. It refuses to
-continue if any Dolt remote or the backup destination points off-machine, and
-otherwise runs `bd backup sync`. Code still goes out with `git push`.
+continue if any of these is true:
+- `no-push` is off
+- `dolt.auto-push`, `export.auto`, `export.git-add` or `events-export` is on
+- a Dolt remote or the backup destination points off-machine
+- the backup is inside the repo or in a cloud-synced folder
+
+Otherwise it runs `bd backup sync`. Code still goes out with `git push`.
 
 Put overrides in `.claude/kf.json`, not in this file. `install-to-project.sh --force`
 overwrites the rules in `.claude/rules/`, but it never writes `kf.json`.

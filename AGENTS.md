@@ -72,7 +72,7 @@ bd close <id>         # Complete work
    git push
    git status  # MUST show "up to date with origin"
    ```
-   Skip `bd dolt push` if `.claude/kf.json` sets `"beads": {"remotePush": false}`; the project keeps beads data on this machine. Use the kf `session-close` skill, which handles that case.
+   If `.claude/kf.json` sets `"beads": {"remotePush": false}`, the project keeps beads data on this machine: skip `bd dolt push` and use the kf `session-close` skill. Such projects also set bd's `no-push`, so a stray `bd dolt push` does nothing.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
