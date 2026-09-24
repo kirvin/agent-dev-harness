@@ -18,7 +18,13 @@ git -C "$TARGET" checkout -q -b setup/tooling
 CONFIG='{"beads": {"remotePush": false}}'
 echo "$CONFIG" > "$TARGET/.claude/kf.json"
 
+set +e
 OUT="$(bash "$REPO_ROOT/scripts/install-to-project.sh" "$TARGET" --force 2>&1)"
+STATUS=$?
+set -e
+
+assert_eq "install exits 0" 0 "$STATUS"
+[[ "$STATUS" -eq 0 ]] || echo "$OUT" | tail -15 | sed 's/^/       | /'
 
 assert_eq "--force leaves kf.json untouched" "$CONFIG" "$(cat "$TARGET/.claude/kf.json")"
 assert_contains "--force reports the preserved override" "Preserved .claude/kf.json" "$OUT"
