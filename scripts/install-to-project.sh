@@ -332,7 +332,7 @@ else
       done
 
       echo "$pattern" >> "$GITIGNORE_DST"
-      ((ADDED_PATTERNS++))
+      ADDED_PATTERNS=$((ADDED_PATTERNS + 1))
     fi
   done
 
