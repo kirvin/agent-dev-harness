@@ -19,6 +19,7 @@ mkdir -p "$WORK/bin"
 cat > "$WORK/bin/bd" <<EOF
 #!/usr/bin/env bash
 echo "\$*" >> "\$BD_CALL_LOG"
+if [[ -n "\${BD_FAIL_CONFIG_GET:-}" && "\$*" == *"config get"*"\$BD_FAIL_CONFIG_GET"* ]]; then echo "simulated failure" >&2; exit 1; fi
 exec "$REAL_BD" "\$@"
 EOF
 chmod +x "$WORK/bin/bd"
@@ -83,12 +84,12 @@ run_sync
 assert_eq "remotePush true: exits 0" 0 "$STATUS"
 assert_contains "remotePush true: runs bd dolt push" "dolt push" "$CALLS"
 
-new_project other-keys
-write_config '{"somethingElse": 1}'
-"$REAL_BD" dolt remote add origin "file://$WORK/other-keys-remote" >/dev/null
+new_project empty-config
+write_config '{}'
+"$REAL_BD" dolt remote add origin "file://$WORK/empty-config-remote" >/dev/null
 run_sync
-assert_eq "config without beads key: pushes" 0 "$STATUS"
-assert_contains "config without beads key: runs bd dolt push" "dolt push" "$CALLS"
+assert_eq "empty config: pushes" 0 "$STATUS"
+assert_contains "empty config: runs bd dolt push" "dolt push" "$CALLS"
 
 # --- supported opt-out ----------------------------------------------------------
 new_project local-ok
@@ -139,6 +140,11 @@ write_config '{"beads": {"remote_push": false}}'
 run_sync
 refused "misspelled key under beads" "remote_push"
 
+new_project top-level-typo
+write_config '{"bead": {"remotePush": false}}'
+run_sync
+refused "misspelled top-level key" "bead"
+
 new_project no-jq
 opt_out
 run_sync "$WORK/nojq"
@@ -156,6 +162,20 @@ opt_out
 "$REAL_BD" config set dolt.auto-push true >/dev/null
 run_sync
 refused "dolt.auto-push on" "dolt.auto-push"
+
+new_project auto-push-numeric
+opt_out
+"$REAL_BD" config set dolt.auto-push 1 >/dev/null
+run_sync
+refused "dolt.auto-push set to 1" "dolt.auto-push"
+
+new_project config-read-fails
+opt_out
+set +e
+OUT="$(BD_FAIL_CONFIG_GET=dolt.auto-push BD_CALL_LOG="$PWD/calls.log" PATH="$WORK/bin:$PATH" "$SCRIPT" 2>&1)"; STATUS=$?
+set -e
+CALLS="$(cat calls.log)"
+refused "bd config read fails" "could not read bd config"
 
 new_project git-add-export
 opt_out
@@ -184,10 +204,36 @@ opt_out
 run_sync
 refused "backup inside the repo" "inside the repository"
 
+new_project remote-in-repo
+opt_out
+"$REAL_BD" dolt remote add origin "file://$PWD/dolt-remote" >/dev/null
+run_sync
+refused "file remote inside the repo" "inside the repository"
+
+new_project case-repo
+if [[ "$WORK/case-repo" -ef "$WORK/CASE-REPO" ]]; then
+  opt_out
+  "$REAL_BD" backup remove >/dev/null
+  "$REAL_BD" backup init "$WORK/CASE-REPO/bk" >/dev/null
+  run_sync
+  refused "backup inside the repo, path in different case" "inside the repository"
+else
+  echo "  skip backup path in different case (case-sensitive filesystem)"
+fi
+
+new_project backup-in-documents
+opt_out
+"$REAL_BD" backup remove >/dev/null
+mkdir -p "$WORK/home/Documents"
+"$REAL_BD" backup init "$WORK/home/Documents/beads-backup" >/dev/null
+run_sync "$WORK/bin:$PATH" "$WORK/home"
+refused "backup in ~/Documents (iCloud Desktop & Documents)" "cloud-synced"
+
 new_project backup-in-dropbox
 opt_out
 "$REAL_BD" backup remove >/dev/null
-"$REAL_BD" backup init "$WORK/home/Dropbox/beads-backup" >/dev/null
+mkdir -p "$WORK/home/Dropbox"
+"$REAL_BD" backup init "$WORK/home/dropbox/beads-backup" >/dev/null
 run_sync "$WORK/bin:$PATH" "$WORK/home"
 refused "backup in a cloud-synced folder" "cloud-synced"
 

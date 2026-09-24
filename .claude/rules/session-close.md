@@ -32,18 +32,21 @@ financial or personal details). To opt out:
    {"beads": {"remotePush": false}}
    ```
 2. Turn on bd's own kill switch and commit `.beads/config.yaml`:
-   `bd config set no-push true`. After this, a stray `bd dolt push` from any
-   source prints "skipping push" and sends nothing.
+   `bd config set no-push true`. After this, a stray `bd dolt push` prints
+   "skipping push" and sends nothing. `no-push` does NOT stop auto-push, so
+   leave `dolt.auto-push` off.
 3. Configure a local backup once: `bd backup init <path>`. The path must be
-   outside the repo and not in a cloud-synced or network folder (Dropbox,
-   iCloud, Google Drive, OneDrive, a NAS mount).
+   outside the repo and not in a cloud-synced or network folder. That rules out
+   Dropbox, iCloud, Google Drive, OneDrive, Box and a NAS mount. It also rules
+   out `~/Desktop` and `~/Documents`, which sync to iCloud on many Macs.
 
 With the opt-out set, session-close never runs `bd dolt push`. It refuses to
 continue if any of these is true:
 - `no-push` is off
 - `dolt.auto-push`, `export.auto`, `export.git-add` or `events-export` is on
 - a Dolt remote or the backup destination points off-machine
-- the backup is inside the repo or in a cloud-synced folder
+- a local remote or the backup is inside the repo or in a cloud-synced folder
+- `kf.json` has any key or value it does not recognise
 
 Otherwise it runs `bd backup sync`. Code still goes out with `git push`.
 

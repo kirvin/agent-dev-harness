@@ -54,6 +54,8 @@ command -v jq >/dev/null || die "${CONFIGS[0]} exists but jq is not installed; r
 read_mode() {
   jq -r '
     if type != "object" then error("top level must be a JSON object")
+    elif (keys - ["beads"]) != [] then
+      error("unknown top-level key(s): \(keys - ["beads"] | join(", ")) (did you mean beads?)")
     elif .beads == null then "push"
     elif (.beads | type) != "object" then error("\"beads\" must be an object")
     elif ((.beads | keys) - ["remotePush"]) != [] then
@@ -97,15 +99,54 @@ resolve_path() {
   echo "$(cd "$path" && pwd -P)$tail"
 }
 
-is_under() { [[ "$1/" == "$2/"* ]]; }
+# is_under PATH DIR: true if PATH is DIR or inside it. Compares by inode (-ef), so
+# case-insensitive filesystems and symlinks cannot slip a path past the check.
+is_under() {
+  local path="$1" dir="$2"
+  [[ -e "$dir" ]] || return 1
+  while :; do
+    if [[ -e "$path" && "$path" -ef "$dir" ]]; then return 0; fi
+    [[ "$path" == "/" || "$path" == "." ]] && return 1
+    path="$(dirname "$path")"
+  done
+}
 
-[[ "$(bd_config no-push)" == "true" ]] \
+CLOUD_FOLDERS=(Dropbox "Google Drive" OneDrive iCloudDrive Box Nextcloud "pCloud Drive"
+  Library/CloudStorage "Library/Mobile Documents" Desktop Documents)
+
+# check_location LABEL URL: flags local paths that git push or a sync client would publish.
+check_location() {
+  local label="$1" path
+  path="$(resolve_path "${2#file://}")"
+  local root
+  for root in "$BEADS_ROOT" "$GIT_ROOT"; do
+    if [[ -n "$root" ]] && is_under "$path" "$root"; then
+      problem "$label at $path is inside the repository, where git push can publish it. Move it outside the repo."
+      return
+    fi
+  done
+  local synced
+  for synced in "${CLOUD_FOLDERS[@]}"; do
+    if is_under "$path" "$HOME/$synced"; then
+      problem "$label at $path is in a cloud-synced folder (~/$synced; Desktop and Documents sync to iCloud on many Macs). Use a path that is not synced."
+      return
+    fi
+  done
+}
+
+# Only values known to mean "off" count as off; anything else (1, yes, a typo) is refused.
+is_off() { [[ "$1" == "" || "$1" == "false" || "$1" == "0" ]]; }
+
+value="$(bd_config no-push)" || exit 1
+[[ "$value" == "true" ]] \
   || problem "bd's own push kill switch is off. Run: bd config set no-push true (and commit .beads/config.yaml)"
-[[ "$(bd_config dolt.auto-push)" != "true" ]] \
-  || problem "dolt.auto-push is on, so writes push in the background. Run: bd config set dolt.auto-push false"
+value="$(bd_config dolt.auto-push)" || exit 1
+is_off "$value" \
+  || problem "dolt.auto-push is '$value'; auto-push ignores no-push and pushes on every write. Run: bd config set dolt.auto-push false"
 for key in export.auto export.git-add events-export; do
-  [[ "$(bd_config "$key")" != "true" ]] \
-    || problem "$key is on; it writes issue data into the repo where git push can publish it. Run: bd config set $key false"
+  value="$(bd_config "$key")" || exit 1
+  is_off "$value" \
+    || problem "$key is '$value'; it writes issue data into the repo where git push can publish it. Run: bd config set $key false"
 done
 
 REMOTES_JSON="$(bd dolt remote list --json)" || die "could not list Dolt remotes; refusing to continue."
@@ -113,8 +154,11 @@ REMOTES="$(jq -r '.[] | "\(.name)\t\(.url)"' <<<"$REMOTES_JSON")" \
   || die "unexpected output from bd dolt remote list; refusing to continue."
 while IFS=$'\t' read -r name url; do
   [[ -n "$name" ]] || continue
-  [[ "$url" == file://* || "$url" == /* ]] \
-    || problem "Dolt remote '$name' points off-machine: $url. Remove it: bd dolt remote remove $name"
+  if [[ "$url" == file://* || "$url" == /* ]]; then
+    check_location "Dolt remote '$name'" "$url"
+  else
+    problem "Dolt remote '$name' points off-machine: $url. Remove it: bd dolt remote remove $name"
+  fi
 done <<<"$REMOTES"
 
 BACKUP_JSON="$(bd backup status --json)" || die "could not read backup status; refusing to continue."
@@ -127,20 +171,7 @@ elif [[ "$BACKUP_URL" != file://* && "$BACKUP_URL" != /* ]]; then
   problem "the backup destination is off-machine: $BACKUP_URL. Run: bd backup remove && bd backup init <local path>"
 else
   BACKUP_PATH="$(resolve_path "${BACKUP_URL#file://}")"
-  for root in "$BEADS_ROOT" "$GIT_ROOT"; do
-    [[ -n "$root" ]] || continue
-    if is_under "$BACKUP_PATH" "$(resolve_path "$root")"; then
-      problem "the backup at $BACKUP_PATH is inside the repository, where git push can publish it. Move it outside the repo."
-      break
-    fi
-  done
-  HOME_REAL="$(resolve_path "$HOME")"
-  for synced in Dropbox "Google Drive" OneDrive iCloudDrive Library/CloudStorage "Library/Mobile Documents"; do
-    if is_under "$BACKUP_PATH" "$HOME_REAL/$synced"; then
-      problem "the backup at $BACKUP_PATH is in a cloud-synced folder ($synced). Use a path that is not synced."
-      break
-    fi
-  done
+  check_location "the backup" "$BACKUP_PATH"
 fi
 
 if [[ ${#PROBLEMS[@]} -gt 0 ]]; then
