@@ -131,6 +131,12 @@ else
   done
 fi
 
+# .claude/kf.json holds per-project kf overrides. It is project-owned: this
+# script never ships or writes it, so overrides survive --force.
+if [[ -f "$TARGET_DIR/.claude/kf.json" ]]; then
+  ok "Preserved .claude/kf.json (project overrides, never overwritten)"
+fi
+
 # ---------------------------------------------------------------------------
 # 2. .claude/settings.json — merge hooks and enabledPlugins
 # ---------------------------------------------------------------------------
