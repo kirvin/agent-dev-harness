@@ -9,7 +9,7 @@ bd ready              # Find available work
 bd show <id>          # View issue details
 bd update <id> --claim  # Claim work atomically
 bd close <id>         # Complete work
-bd dolt push          # Push beads data to remote
+bd dolt push          # Push beads data to remote (not if .claude/kf.json opts out)
 ```
 
 ## Non-Interactive Shell Commands
@@ -68,10 +68,11 @@ bd close <id>         # Complete work
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd dolt push
+   bd dolt push      # unless opted out, see below
    git push
    git status  # MUST show "up to date with origin"
    ```
+   Skip `bd dolt push` if `.claude/kf.json` sets `"beads": {"remotePush": false}`; the project keeps beads data on this machine. Use the kf `session-close` skill, which handles that case.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session

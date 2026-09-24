@@ -35,10 +35,11 @@ bd close <id>         # Complete work
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
-   bd dolt push                # push beads data
+   bd dolt push                # push beads data (see opt-out below)
    git push -u origin HEAD     # works for feature branches; main is write-protected
    git status                  # MUST show "up to date with origin"
    ```
+   Skip `bd dolt push` if `.claude/kf.json` sets `"beads": {"remotePush": false}`; the project keeps beads data on this machine. Use the kf `session-close` skill, which handles that case.
    Code changes belong on a feature branch (see `.claude/rules/git.md`). Pushing a WIP branch is fine — PR creation is decoupled from session end and happens when work is ready to merge.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
