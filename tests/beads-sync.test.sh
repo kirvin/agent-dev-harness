@@ -233,9 +233,20 @@ new_project backup-in-dropbox
 opt_out
 "$REAL_BD" backup remove >/dev/null
 mkdir -p "$WORK/home/Dropbox"
-"$REAL_BD" backup init "$WORK/home/dropbox/beads-backup" >/dev/null
+"$REAL_BD" backup init "$WORK/home/Dropbox/beads-backup" >/dev/null
 run_sync "$WORK/bin:$PATH" "$WORK/home"
 refused "backup in a cloud-synced folder" "cloud-synced"
+
+if [[ "$WORK/home/Dropbox" -ef "$WORK/home/dropbox" ]]; then
+  new_project backup-in-dropbox-case
+  opt_out
+  "$REAL_BD" backup remove >/dev/null
+  "$REAL_BD" backup init "$WORK/home/dropbox/beads-backup-2" >/dev/null
+  run_sync "$WORK/bin:$PATH" "$WORK/home"
+  refused "backup in a cloud-synced folder, path in different case" "cloud-synced"
+else
+  echo "  skip cloud folder path in different case (case-sensitive filesystem)"
+fi
 
 # (bare `bd backup sync` prints help and exits 0 here, which would look like success)
 new_project no-backup
