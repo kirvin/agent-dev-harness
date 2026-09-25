@@ -1,7 +1,8 @@
 # Retrospectives
 
 When the user asks for a "retro", "retrospective", or "review" over a span of work
-(epic, session, timeframe, or set of issues), load the `retro` project skill.
+(epic, session, timeframe, or set of issues), load `Skill(kf:retro)`
+(it ships in the kf plugin, not in `.claude/skills/`).
 
 The skill handles:
 - Data gathering from `git log` and `bd list --status=closed`
@@ -12,7 +13,7 @@ The skill handles:
 
 ## Trigger phrases
 
-Load the `retro` skill when the user says things like:
+Load `kf:retro` when the user says things like:
 - "Run a retro on [epic/sprint/last week/last session]"
 - "Retrospective on the [X] work"
 - "What have we learned from [span of work]?"
@@ -20,7 +21,7 @@ Load the `retro` skill when the user says things like:
 
 ## Relationship to per-task retro
 
-The `task-completion` project skill captures per-task `## Lessons Learned` blocks in
+The `kf:task-completion` skill captures per-task `## Lessons Learned` blocks in
 beads issue notes. These blocks are the primary input for the comprehensive retro.
 The two work as a pair: mini-retros surface friction per task; this retro finds
 systemic patterns across tasks.

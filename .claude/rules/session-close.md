@@ -1,11 +1,11 @@
 # Session Close
 
 When the user wants to end the session, clear context, or hand off work, load
-the `session-close` project skill.
+`Skill(kf:session-close)`. It ships in the kf plugin, not in `.claude/skills/`.
 
 ## Trigger phrases
 
-Load `session-close` when the user says things like:
+Load `kf:session-close` when the user says things like:
 - "wrap up", "let's wrap", "closing out"
 - "I'm done for now", "that's it for today", "stopping here"
 - "save context", "save session", "save my place"

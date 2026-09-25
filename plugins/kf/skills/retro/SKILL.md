@@ -114,7 +114,7 @@ N commits | M closed issues | [date range]
 
 ## Relationship to per-task mini-retro
 
-The `task-completion` project skill writes `## Lessons Learned` blocks into beads issue
+The `kf:task-completion` skill writes `## Lessons Learned` blocks into beads issue
 notes as each task closes. A span with consistent mini-retros produces much richer signal
 here. The two work as a pair: mini-retros surface friction per task; this retro finds
 systemic patterns across tasks and converts them into trackable improvement work.
