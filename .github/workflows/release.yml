@@ -1,0 +1,42 @@
+name: Release
+
+# Every push to main runs `auto shipit`. It reads the Conventional Commit types
+# merged since the latest GitHub release: fix -> patch, feat -> minor,
+# ! / BREAKING CHANGE -> major. If the newest merge is another type (docs,
+# chore, ci...), it releases nothing yet; those changes ship with the next
+# fix or feat. A release bumps plugins/kf/.claude-plugin/plugin.json, commits
+# and tags it on main, and publishes GitHub release notes.
+# See docs/adr/ADR-001-release-automation.md.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # push the version commit + tag, create the GitHub release
+      pull-requests: read    # map commits to merged PRs
+      issues: read           # read PR labels
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 22
+      # No install scripts: the checkout's persisted token must not be
+      # reachable from a dependency's postinstall.
+      - run: npm ci --ignore-scripts
+      - run: npx --no-install auto shipit --no-changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
