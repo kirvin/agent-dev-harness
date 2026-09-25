@@ -161,16 +161,27 @@ The spike used real content from the incubator: 3 skills (`task-completion`, `in
 | Drift: hand-edit one deployed Kiro steering file | ✅ `apm audit --ci` exits 1 and names the file; `apm install` restores it |
 | Hidden Unicode: inject bidi override + zero-width space into a skill | ✅ CRITICAL findings with line and column, exits 1 |
 | Policy: allowlist + required package, `enforcement: block` | ✅ Flags 2 non-allowlisted dependencies and 1 missing required package, exits 1 |
-| **Policy file invalid** | ❌ **Fails open.** Enforcement is skipped with a warning and the audit exits 0. The `require:` example in APM's own governance guide fails the validator this way. |
+| **Policy file invalid** (e.g. `require` entries written as objects) | ❌ **Fails open by default.** Enforcement is skipped with a warning and the audit exits 0. This is a documented design choice, not a bug (see [Upstream status](#upstream-status)). |
 | Policy fail-closed setting (`policy.fetch_failure_default: block` in `apm.yml`) | ✅ Invalid policy then exits 1 |
 | No discoverable org (local git remote) | ⚠️ Also fails open unless the fail-closed setting is set |
 
 **Findings that shape the rollout**
 
-1. **Set fail-closed everywhere.** The bootstrap template must include `policy.fetch_failure_default: block`, and the org policy itself should be validated in its own repo's CI, because a malformed policy silently disables governance.
+1. **Set fail-closed everywhere.** The bootstrap template must include `policy.fetch_failure_default: block` in the consumer `apm.yml`. The org policy itself should be validated in its own repo's CI, because under the default a malformed policy disables governance with only a warning. `require` entries are plain strings; pin a version as `owner/repo#ref`.
 2. **Skills are deployed in triplicate** (`.claude/skills`, `.kiro/skills`, `.agents/skills`). That is correct, but Copilot also reads `.claude/skills`, so we need to confirm Copilot doesn't show duplicate skills.
 3. **Always-on rules need an authoring convention:** omit `applyTo`, and run `apm compile` for Copilot as part of bootstrap.
 4. **Skill bodies still reference Claude-only constructs** (`Skill(kf:...)`, `ce:*` skills, beads-specific steps). APM moves the files correctly; making them work in Kiro and Copilot is a content task (`claude-config-39u.3`).
+
+### Upstream status
+
+Searched microsoft/apm issues and PRs on 2026-09-25 for each finding:
+
+| Finding | Upstream | Action |
+|---|---|---|
+| Policy fails open on fetch or parse failure | By design: [#829](https://github.com/microsoft/apm/issues/829) chose fail-open as the default to avoid bricking developer machines when a policy server is unreachable, and added the fail-closed knob. [#936](https://github.com/microsoft/apm/issues/936) fixed the earlier *silent* bypass, so it now warns. Per #829, `--no-policy` still bypasses enforcement even in block mode. | Configure, don't report. CI must never pass `--no-policy`. |
+| `applyTo: "**"` deploys as file-match, not always-on, for Kiro and Claude | Not tracked. Open PR [#2030](https://github.com/microsoft/apm/pull/2030) fixes the same problem for Cursor (`alwaysApply`) only. | Candidate upstream issue |
+| Skills deployed to `.claude/skills` and `.agents/skills` may show twice in Copilot | Not tracked | Verify in Copilot first; report only if it reproduces |
+| UTF-8 BOM on an instruction file drops its frontmatter | Fixed: [#2683](https://github.com/microsoft/apm/issues/2683) | Include BOM-saved files (common from Windows editors) in the Windows spike |
 
 **Not yet tested:** Windows, hooks/agents/MCP translation, private GitHub Enterprise sources and auth, `apm update` and `apm outdated` workflows, and runtime behavior inside Kiro and Copilot (whether each tool actually loads and triggers the deployed files).
 
@@ -222,11 +233,11 @@ apm install <package-path-or-owner/repo/path#ref> --target claude,kiro,copilot
 apm compile -t copilot                        # folds always-on rules into copilot-instructions.md
 apm audit --ci --policy ./apm-policy.yml      # drift + integrity + policy gate
 
-# Minimal valid policy (require is a list of strings, not objects)
+# Minimal valid policy (require entries are strings; pin versions as owner/repo#ref)
 #   enforcement: block
 #   dependencies:
 #     allow: ["contoso/*"]
-#     require: ["contoso/web-standards"]
+#     require: ["contoso/web-standards#v1.0.0"]
 # And in the consumer's apm.yml:
 #   policy:
 #     fetch_failure_default: block
