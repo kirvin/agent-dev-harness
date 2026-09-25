@@ -1,0 +1,28 @@
+name: Conventional Commits
+
+# Releases are chosen from commit types (see release.yml), so an untyped commit
+# would silently ship nothing. Runs on title edits too, hence its own workflow.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check PR title and commit subjects
+        env:
+          # Via env, never interpolated into the script: titles are untrusted input.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: scripts/check-conventional-commits.sh "$BASE_SHA" "$HEAD_SHA"

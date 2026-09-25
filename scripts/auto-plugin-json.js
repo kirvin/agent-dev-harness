@@ -13,13 +13,35 @@ const { execFileSync } = require("node:child_process");
 
 const DEFAULT_FILE = "plugins/kf/.claude-plugin/plugin.json";
 const BUMPS = ["major", "minor", "patch"];
+const SEMVER = /^\d+\.\d+\.\d+$/;
 
 function readVersion(file) {
   const version = JSON.parse(fs.readFileSync(file, "utf8")).version;
-  if (!/^\d+\.\d+\.\d+$/.test(version || "")) {
+  if (!SEMVER.test(version || "")) {
     throw new Error(`${file}: version "${version}" is not x.y.z`);
   }
   return version;
+}
+
+// "v1.4.5" or "1.4.5" -> "1.4.5"; anything else (e.g. a commit SHA) -> null.
+function parseVersion(value) {
+  const version = String(value || "").replace(/^v/, "");
+  return SEMVER.test(version) ? version : null;
+}
+
+function compareVersions(a, b) {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i];
+  return 0;
+}
+
+// The higher of the given versions, ignoring any that are not x.y.z.
+function maxVersion(...values) {
+  return values
+    .map(parseVersion)
+    .filter(Boolean)
+    .reduce((max, v) => (max === null || compareVersions(v, max) > 0 ? v : max), null);
 }
 
 function nextVersion(current, bump) {
@@ -36,15 +58,28 @@ function nextVersion(current, bump) {
 function writeVersion(file, version) {
   const text = fs.readFileSync(file, "utf8");
   const updated = text.replace(/("version"\s*:\s*")[^"]*(")/, `$1${version}$2`);
-  if (updated === text && readVersion(file) !== version) {
-    throw new Error(`${file}: could not find a "version" field to update`);
-  }
   fs.writeFileSync(file, updated);
+  let written;
+  try {
+    written = readVersion(file);
+  } finally {
+    if (written !== version) fs.writeFileSync(file, text);
+  }
+  if (written !== version) {
+    throw new Error(`${file}: the top-level "version" field was not updated to ${version}`);
+  }
 }
 
 // Returns the release tag. With dryRun, computes it and changes nothing.
-function release({ file, bump, useVersion, dryRun = false, prefix, cwd = process.cwd() }) {
-  const version = useVersion || nextVersion(readVersion(file), bump);
+// `previous` is the version to bump from; it defaults to the file's version.
+function release({ file, bump, useVersion, previous, dryRun = false, prefix, cwd = process.cwd() }) {
+  let version;
+  if (useVersion) {
+    version = parseVersion(useVersion);
+    if (!version) throw new Error(`--use-version "${useVersion}" is not x.y.z`);
+  } else {
+    version = nextVersion(previous || readVersion(file), bump);
+  }
   const tag = prefix(version);
   if (dryRun) return tag;
 
@@ -59,6 +94,10 @@ class KfPluginJsonPlugin {
   constructor(options = {}) {
     this.name = "kf-plugin-json";
     this.file = options.file || DEFAULT_FILE;
+    this.cwd = options.cwd || process.cwd();
+    // Push to the named remote, whose credentials actions/checkout persisted,
+    // rather than auto.remote, which embeds the token in the URL (and argv).
+    this.remote = options.remote || "origin";
   }
 
   apply(auto) {
@@ -67,12 +106,17 @@ class KfPluginJsonPlugin {
     );
 
     auto.hooks.version.tapPromise(this.name, async ({ bump, useVersion, dryRun, quiet }) => {
+      // Bump from the higher of plugin.json and the latest GitHub release, so a
+      // stale file can never propose a tag that already exists.
+      const previous = maxVersion(readVersion(this.file), await auto.git.getLatestRelease());
       const tag = release({
         file: this.file,
         bump,
         useVersion,
+        previous,
         dryRun,
         prefix: (v) => auto.prefixRelease(v),
+        cwd: this.cwd,
       });
       if (dryRun && quiet) console.log(tag);
       else auto.logger.log.info(dryRun ? `Would release ${tag}` : `Committed and tagged ${tag}`);
@@ -83,9 +127,10 @@ class KfPluginJsonPlugin {
     auto.hooks.publish.tapPromise(this.name, async () => {
       execFileSync(
         "git",
-        ["push", "--atomic", "--follow-tags", auto.remote, `HEAD:${auto.baseBranch}`],
-        { stdio: "inherit" }
+        ["push", "--atomic", "--follow-tags", this.remote, `HEAD:${auto.baseBranch}`],
+        { cwd: this.cwd, stdio: "pipe" }
       );
+      auto.logger.log.info(`Pushed ${auto.baseBranch} and tags to ${this.remote}`);
     });
   }
 }
@@ -94,4 +139,5 @@ module.exports = KfPluginJsonPlugin;
 module.exports.default = KfPluginJsonPlugin;
 module.exports.readVersion = readVersion;
 module.exports.nextVersion = nextVersion;
+module.exports.maxVersion = maxVersion;
 module.exports.release = release;

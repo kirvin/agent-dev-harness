@@ -3,7 +3,7 @@
   "private": true,
   "description": "Release tooling only (intuit/auto). The kf plugin itself has no npm dependencies.",
   "scripts": {
-    "release": "auto shipit --no-changelog"
+    "release:dry-run": "auto latest --dry-run --no-changelog"
   },
   "devDependencies": {
     "@auto-it/conventional-commits": "11.3.6",

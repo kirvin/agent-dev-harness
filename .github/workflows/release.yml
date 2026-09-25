@@ -2,10 +2,10 @@ name: Release
 
 # Every push to main runs `auto shipit`. It reads the Conventional Commit types
 # merged since the latest GitHub release: fix -> patch, feat -> minor,
-# ! / BREAKING CHANGE -> major. If the newest merge is another type (docs,
-# chore, ci...), it releases nothing yet; those changes ship with the next
-# fix or feat. A release bumps plugins/kf/.claude-plugin/plugin.json, commits
-# and tags it on main, and publishes GitHub release notes.
+# ! / BREAKING CHANGE -> major. Other types (docs, chore, ci...) release
+# nothing on their own and never hold back a pending fix or feat. A release
+# bumps plugins/kf/.claude-plugin/plugin.json, commits and tags it on main,
+# and publishes GitHub release notes.
 # See docs/adr/ADR-001-release-automation.md.
 
 on:
@@ -40,6 +40,16 @@ jobs:
       # Runs are serialised, but each checks out its own trigger commit. Catch up
       # with any release commit a previous run pushed, or our push is rejected.
       - run: git pull --ff-only origin main
-      - run: npx --no-install auto shipit --no-changelog
+      # A re-run, or a run queued behind one that already released these
+      # commits, finds HEAD tagged. auto would then release an empty patch.
+      - id: released
+        name: Skip if HEAD is already released
+        run: |
+          if tag="$(git describe --exact-match --match 'v*' HEAD 2>/dev/null)"; then
+            echo "HEAD is already released as $tag; nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.released.outputs.skip != 'true'
+        run: npx --no-install auto shipit --no-changelog
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

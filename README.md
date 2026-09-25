@@ -106,9 +106,9 @@ git add skills-lock.json && git commit -m "chore: update skills"
 
 See `docs/deployment-and-release.md` for the full release process. Short version:
 
-1. Edit skills under `plugins/kf/`
-2. Bump the version in the plugin's `.claude-plugin/plugin.json`
-3. Push — consuming projects update with `claude plugin update kf@agent-dev-harness`
+1. Edit skills under `plugins/kf/` on a branch, with Conventional Commit messages (`fix:` for changed behaviour, `feat:` for new skills)
+2. Merge the PR. A `fix` or `feat` merge releases automatically: the version in `plugin.json` is bumped, tagged and published
+3. Consuming projects update with `claude plugin update kf@agent-dev-harness`
 
 ## Propagating config changes to existing projects
 

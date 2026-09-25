@@ -4,11 +4,12 @@
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-plugin-release: ## Sync skills into plugins/kf/ and push (releases are automatic on merge to main; see docs/deployment-and-release.md)
+plugin-release: ## Sync generated skills into plugins/kf/ on a branch and push it; merging the PR releases (see docs/deployment-and-release.md)
+	@test "$$(git branch --show-current)" != main || { echo "plugin-release: run this on a branch, not main" >&2; exit 1; }
 	node scripts/generate-plugin-skills.js
 	git add plugins/kf/
-	git diff --cached --quiet || git commit -m "chore: sync plugin skills\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-	git push
+	git diff --cached --quiet || git commit -m "fix(skills): sync generated skills from .agents/skills"
+	git push -u origin HEAD
 
 bd-close: ## Close a beads issue and its linked GitHub issue (id=adp-xxx, reason="...")
 	./scripts/bd-close.sh $(id) $(if $(reason),--reason="$(reason)")

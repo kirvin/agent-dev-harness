@@ -51,14 +51,17 @@ notes. CI fails PRs whose title or commit subjects are not Conventional Commits.
   - What was verified: auto's GitHub reads against this repo, and a full `auto latest --dry-run`.
   - What wasn't verified until the first real release: the write calls, which are creating a release and pushing.
   - Re-check `npm audit` and drop the overrides when auto updates octokit.
-- **A skip-type merge holds the release.** If the newest merge is `docs`, `chore` and so on, auto waits, and earlier `fix`/`feat` changes ship with the next releasable merge.
+  - `@octokit/rest` 20.x is the ceiling: v21 is ESM-only and breaks auto's `require`.
+- **No-release types need explicit config.** The conventional-commits plugin defaults non-fix/feat types to `skip`. auto then withholds the whole release when the newest merge is a `docs` or `chore` commit, which would strand a merged fix. `.autorc` sets `defaultReleaseType: "none"` instead, so those types add nothing and block nothing. Verified: fix-then-chore gives patch, chore-only gives no release.
+- **An empty range means a patch.** With no commits since the latest release, auto defaults to a patch. That happens on a job re-run, or on a run queued behind one that already released the same commits. The workflow therefore skips `shipit` when HEAD already carries a `v*` tag.
 
 ## Threat notes (STRIDE, pipeline scope)
 
 | Threat | Mitigation |
 |--------|------------|
-| Tampering: a malicious dependency's install script uses the persisted checkout token to push to `main` | `npm ci --ignore-scripts`; exact pins plus a lockfile generated on linux/amd64; `npm audit` clean |
+| Tampering: a malicious dependency's install script uses the persisted checkout token to push to `main` | `npm ci --ignore-scripts`; exact pins plus a lockfile generated on linux/amd64; `npm audit` clean. Residual: auto's own dependency code runs with the write token during `shipit`, which is inherent to running a release tool. |
+| Information disclosure: the token appears in process arguments | The plugin's release push goes to the `origin` remote, using the credentials `actions/checkout` persisted, so the token is not in its arguments. auto's own auth probe (`git push --dry-run` to a token URL) still puts it in argv. Actions masks the token in logs, and the runner is single-tenant. |
 | Tampering or elevation: PR title injection into a workflow script | The title reaches the check only through an env var. The check job has read-only permissions and `persist-credentials: false`. |
 | Elevation: token scope | Workflow default `contents: read`. The release job adds `contents: write` and read-only `pull-requests` and `issues`. The job runs only on `push` to `main`, never on `pull_request` or `pull_request_target`. |
-| Denial of service: two merges race | `concurrency: release` serialises runs. Each run fast-forwards to the current `main` before releasing. If `main` moves mid-run anyway, `--atomic` means the rejected push leaves neither commit nor tag, and the next merge releases those changes. |
+| Denial of service: two merges race | `concurrency: release` serialises runs and keeps only the newest pending one. Each run fast-forwards to the current `main` first, so the run that executes releases everything merged so far. A run that then finds HEAD already tagged skips. If `main` moves mid-run anyway, `--atomic` means the rejected push leaves neither commit nor tag, and the next merge releases those changes. |
 | Repudiation | Release commits are authored by `github-actions[bot]`, and each run is logged in Actions. |

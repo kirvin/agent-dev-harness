@@ -73,6 +73,24 @@ check "fix: merge the side branch"
 assert_eq "merge commits are ignored: exits 0" 0 "$STATUS"
 
 new_repo
+commit "fix(README): uppercase scope"
+commit "fix(install,rules): two scopes"
+commit "feat(x)!: breaking with scope"
+commit "chore(release): kf v1.2.3"
+check "fix(README): scopes auto accepts"
+assert_eq "scopes and forms auto accepts: exits 0" 0 "$STATUS"
+
+new_repo
+git commit -q --allow-empty --allow-empty-message -m ""
+check "fix: ok"
+assert_eq "empty commit message: exits 1" 1 "$STATUS"
+
+new_repo
+commit "fix(): empty scope"
+check "fix: ok"
+assert_eq "empty scope: exits 1" 1 "$STATUS"
+
+new_repo
 commit "docs: note"
 check ""
 assert_eq "no title given: checks commits only" 0 "$STATUS"

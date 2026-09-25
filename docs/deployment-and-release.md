@@ -24,7 +24,9 @@ edit the version in `plugin.json` by hand.
 
 ### 1. Make your changes on a branch
 
-Edit skill files, add new skills, or update rules under `plugins/kf/`.
+Edit skill files, add new skills, or update rules under `plugins/kf/`. For the
+generated design-skill wrappers, `make plugin-release` syncs them and pushes
+the branch as a `fix(skills):` commit.
 
 ### 2. Write Conventional Commits
 
@@ -38,9 +40,9 @@ commit subject is not in this format (`scripts/check-conventional-commits.sh`).
 | `feat!: ...` or a `BREAKING CHANGE:` footer | major (`1.4.5` → `2.0.0`) | skill renamed or removed |
 | `docs:`, `chore:`, `ci:`, `build:`, `test:`, `refactor:`, `style:`, `perf:` | none by itself | changes consumers don't need to pull |
 
-A release covers everything merged since the previous GitHub release. If the
-newest merged PR is a no-release type, nothing ships yet; those changes go out
-with the next `fix` or `feat`.
+A release covers everything merged since the previous GitHub release. Merges of
+the no-release types never hold back a pending `fix` or `feat`, and they ship
+along with the next one.
 
 ### 3. Merge the PR
 
@@ -58,7 +60,7 @@ To preview what the next release would be:
 ```bash
 npm ci --ignore-scripts
 GH_TOKEN=$(gh auth token) npx auto version        # prints the bump, or nothing
-GH_TOKEN=$(gh auth token) npx auto latest --dry-run --no-changelog
+GH_TOKEN=$(gh auth token) npm run release:dry-run
 ```
 
 ### 4. Update in each consuming project

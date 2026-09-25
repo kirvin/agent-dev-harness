@@ -12,7 +12,7 @@
 set -euo pipefail
 
 TYPES="feat|fix|perf|refactor|docs|style|test|build|ci|chore|revert"
-PATTERN="^($TYPES)(\([a-z0-9._/-]+\))?!?: [^ ].*"
+PATTERN="^($TYPES)(\([^()]+\))?!?: [^ ].*"
 
 [[ $# -eq 2 ]] || { echo "usage: PR_TITLE=... $0 BASE HEAD" >&2; exit 2; }
 BASE="$1"
@@ -25,10 +25,15 @@ if [[ -n "${PR_TITLE:-}" ]] && ! is_conventional "$PR_TITLE"; then
   bad+=("PR title: $PR_TITLE")
 fi
 
-while IFS= read -r subject; do
-  [[ -n "$subject" ]] || continue
-  is_conventional "$subject" || bad+=("commit: $subject")
-done < <(git log --no-merges --format=%s "$BASE..$HEAD")
+# One line per commit, "<sha> <subject>", so an empty subject is still seen.
+while read -r sha subject; do
+  [[ -n "$sha" ]] || continue
+  if [[ -z "$subject" ]]; then
+    bad+=("commit ${sha:0:7}: (empty message)")
+  elif ! is_conventional "$subject"; then
+    bad+=("commit: $subject")
+  fi
+done < <(git log --no-merges --format='%H %s' "$BASE..$HEAD")
 
 if [[ ${#bad[@]} -gt 0 ]]; then
   echo "Not Conventional Commits (type(scope)!: description, type one of ${TYPES//|/, }):" >&2
