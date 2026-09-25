@@ -18,32 +18,49 @@ Claude Code determines whether an update is available by comparing the version i
 
 ## Release Process
 
-### 1. Make your changes
+Releases are automatic. Every push to `main` runs `.github/workflows/release.yml`,
+which runs [intuit/auto](https://intuit.github.io/auto/) (`auto shipit`). Do not
+edit the version in `plugin.json` by hand.
 
-Edit skill files, add new skills, or update rules under `plugins/kf/`.
+### 1. Make your changes on a branch
 
-### 2. Bump the version in `plugin.json`
+Edit skill files, add new skills, or update rules under `plugins/kf/`. For the
+generated design-skill wrappers, `make plugin-release` syncs them and pushes
+the branch as a `fix(skills):` commit.
+
+### 2. Write Conventional Commits
+
+The commit type decides the release. CI fails a PR whose title or any non-merge
+commit subject is not in this format (`scripts/check-conventional-commits.sh`).
+
+| Commit | Release | Use for |
+|--------|---------|---------|
+| `fix(scope): ...` | patch (`1.4.5` → `1.4.6`) | changed skill or rule behaviour, bug fixes |
+| `feat(scope): ...` | minor (`1.4.5` → `1.5.0`) | new skill, new capability |
+| `feat!: ...` or a `BREAKING CHANGE:` footer | major (`1.4.5` → `2.0.0`) | skill renamed or removed |
+| `docs:`, `chore:`, `ci:`, `build:`, `test:`, `refactor:`, `style:`, `perf:` | none by itself | changes consumers don't need to pull |
+
+A release covers everything merged since the previous GitHub release. Merges of
+the no-release types never hold back a pending `fix` or `feat`, and they ship
+along with the next one.
+
+### 3. Merge the PR
+
+On merge, `auto shipit`:
+- bumps `plugins/kf/.claude-plugin/plugin.json`
+- commits `chore(release): kf vX.Y.Z` on `main`
+- pushes an annotated `vX.Y.Z` tag
+- publishes GitHub release notes grouped by change type
+
+A local plugin handles the version file (`scripts/auto-plugin-json.js`). The
+decision record is `docs/adr/ADR-001-release-automation.md`.
+
+To preview what the next release would be:
 
 ```bash
-# plugins/kf/.claude-plugin/plugin.json
-{
-  "version": "1.2.0"   # increment patch, minor, or major as appropriate
-}
-```
-
-Use standard semver conventions:
-| Change type | Bump |
-|-------------|------|
-| New skill added | minor (`1.1.0` → `1.2.0`) |
-| Existing skill updated | patch (`1.2.0` → `1.2.1`) |
-| Breaking change (skill renamed/removed) | major (`1.2.0` → `2.0.0`) |
-
-### 3. Commit and push
-
-```bash
-git add plugins/kf/
-git commit -m "feat: <description of change> (kf v1.2.0)"
-git push
+npm ci --ignore-scripts
+GH_TOKEN=$(gh auth token) npx auto version        # prints the bump, or nothing
+GH_TOKEN=$(gh auth token) npm run release:dry-run
 ```
 
 ### 4. Update in each consuming project
@@ -67,7 +84,7 @@ claude plugin uninstall kf@agent-dev-harness --scope project
 claude plugin install kf@agent-dev-harness
 ```
 
-This always pulls the latest commit from GitHub regardless of version. Use this during development; bump the version for deliberate releases.
+This always pulls the latest commit from GitHub regardless of version. Use this during development; merged `fix`/`feat` PRs produce the versioned releases.
 
 ---
 

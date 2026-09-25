@@ -36,7 +36,7 @@ bd close <id>         # Complete work
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    bd dolt push                # push beads data (see opt-out below)
-   git push -u origin HEAD     # works for feature branches; main is write-protected
+   git push -u origin HEAD     # push your feature branch; do not commit to main directly
    git status                  # MUST show "up to date with origin"
    ```
    If `.claude/kf.json` sets `"beads": {"remotePush": false}`, the project keeps beads data on this machine: skip `bd dolt push` and use the kf `session-close` skill. Such projects also set bd's `no-push`, so a stray `bd dolt push` does nothing.
@@ -107,4 +107,4 @@ When adding credentials to setup scripts, guard every step so re-runs are safe a
 - All scripts resolve `REPO_ROOT` via `BASH_SOURCE[0]` before using relative paths
 - `.env` is always sourced from `$REPO_ROOT/.env` (never relative `./`)
 - Design skill wrappers in `plugins/kf/skills/` are generated, not hand-edited — edit source in `.agents/skills/`, then run `make plugin-release`
-- Plugin version bumps are required for `claude plugin update` to pick up changes — see `docs/deployment-and-release.md`
+- Releases are automatic: merging a `fix:` or `feat:` PR bumps `plugins/kf/.claude-plugin/plugin.json` and publishes it, which is what `claude plugin update` needs. Never bump the version by hand; see `docs/deployment-and-release.md`

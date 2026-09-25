@@ -5,3 +5,6 @@ node_modules/
 .dolt/
 *.db
 .beads-credential-key
+
+# Personal backlog scratchpad (see .claude/rules/backlog-inbox.md)
+docs/TODO.md
