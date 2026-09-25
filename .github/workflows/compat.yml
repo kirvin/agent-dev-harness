@@ -14,8 +14,35 @@ jobs:
     name: Shellcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
       - uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38  # 2.0.0
         with:
           scandir: './scripts'
           severity: error
+
+  tests:
+    name: Script tests
+    runs-on: ubuntu-latest
+    env:
+      BEADS_VERSION: 1.2.2
+      BEADS_SHA256: 8140098a51d3b81d5548d1c5e6db1a2d9930e5d141efe2a4bff7d079c4d321e8
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Install bd (pinned release, checksum verified)
+        run: |
+          tarball="beads_${BEADS_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o "$tarball" "https://github.com/gastownhall/beads/releases/download/v${BEADS_VERSION}/${tarball}"
+          echo "${BEADS_SHA256}  ${tarball}" | sha256sum -c -
+          tar xzf "$tarball" bd
+          sudo install -m 0755 bd /usr/local/bin/bd
+          bd version
+      - name: Configure git identity for throwaway repos
+        run: |
+          git config --global user.name "CI"
+          git config --global user.email "ci@example.invalid"
+      - name: Shellcheck tests and skill scripts
+        run: shellcheck -S error tests/*.sh plugins/kf/skills/*/*.sh
+      - name: Run tests
+        run: make test

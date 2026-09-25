@@ -9,7 +9,7 @@ Run this when the user wants to end the session, clear context, or hand off to
 a future session. It does three things in order:
 
 1. **Persist state** — save any session context into beads issue notes
-2. **Push everything** — git + beads dolt push
+2. **Push everything** — git push, plus beads via `beads-sync.sh` (honours `.claude/kf.json`)
 3. **Print handoff block** — concise instructions for the next session
 
 ---
@@ -63,12 +63,27 @@ bd update <id> --notes "Context from session $(date +%Y-%m-%d): ..."
 
 ## Step 3 — Push all work
 
+Never run `bd dolt push` directly. The beads step goes through `beads-sync.sh`,
+which sits in this skill's base directory (shown when the skill loads):
+
 ```bash
 git pull --rebase
-bd dolt push
+bash <skill base directory>/beads-sync.sh
 git push
 git status   # must show "up to date with origin"
 ```
+
+`beads-sync.sh` runs `bd dolt push` by default. If the project commits
+`.claude/kf.json` containing `{"beads": {"remotePush": false}}`, it never
+pushes. Instead it checks, read-only, that bd's `no-push` is on and that
+nothing else can carry beads data off the machine. These include auto-push,
+exports into the repo, remotes, and the backup location. Then it runs a local
+`bd backup sync`. The full opt-out setup is in `.claude/rules/session-close.md`.
+
+If `beads-sync.sh` exits non-zero, stop and show the user its message. Do not
+work around it: do not push to test the remote, and do not edit remotes or the
+config unless the user asks. `git push` still runs, because code and beads data
+are separate.
 
 If `git push` fails, resolve and retry before continuing.
 
