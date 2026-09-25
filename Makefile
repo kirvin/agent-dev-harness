@@ -4,7 +4,7 @@
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-plugin-release: ## Sync skills into plugins/kf/ and push (version bumps handled by release-please)
+plugin-release: ## Sync skills into plugins/kf/ and push (bump plugins/kf/.claude-plugin/plugin.json by hand first; see docs/deployment-and-release.md)
 	node scripts/generate-plugin-skills.js
 	git add plugins/kf/
 	git diff --cached --quiet || git commit -m "chore: sync plugin skills\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
