@@ -37,6 +37,9 @@ jobs:
       # No install scripts: the checkout's persisted token must not be
       # reachable from a dependency's postinstall.
       - run: npm ci --ignore-scripts
+      # Runs are serialised, but each checks out its own trigger commit. Catch up
+      # with any release commit a previous run pushed, or our push is rejected.
+      - run: git pull --ff-only origin main
       - run: npx --no-install auto shipit --no-changelog
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
